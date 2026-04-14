@@ -1,0 +1,137 @@
+[
+  {
+    "prompt": "What is the sum of 2 and 3?"
+  },
+  {
+    "prompt": "What is the sum of 265 and 345?"
+  },
+  {
+    "prompt": "Add 99 and 1"
+  },
+  {
+    "prompt": "Greet shrek"
+  },
+  {
+    "prompt": "Greet john"
+  },
+  {
+    "prompt": "Say hello to Alice"
+  },
+  {
+    "prompt": "Reverse the string 'hello'"
+  },
+  {
+    "prompt": "Reverse the string 'world'"
+  },
+  {
+    "prompt": "Reverse 'abcdef'"
+  },
+  {
+    "prompt": "What is the square root of 16?"
+  },
+  {
+    "prompt": "Calculate the square root of 144"
+  },
+  {
+    "prompt": "Square root of 81"
+  },
+  {
+    "prompt": "Replace all numbers in \"Hello 34 I'm 233 years old\" with NUMBERS"
+  },
+  {
+    "prompt": "Replace all vowels in 'Programming is fun' with asterisks"
+  },
+  {
+    "prompt": "Substitute the word 'cat' with 'dog' in 'The cat sat on the mat with another cat'"
+  },
+  {
+    "prompt": "Multiply 7 and 8"
+  },
+  {
+    "prompt": "What is 12 times 15?"
+  },
+  {
+    "prompt": "Calculate the product of 3 and 99"
+  },
+  {
+    "prompt": "Divide 100 by 4"
+  },
+  {
+    "prompt": "What is 999 divided by 3?"
+  },
+  {
+    "prompt": "Divide 50 by 7"
+  },
+  {
+    "prompt": "How long is the string 'hello world'?"
+  },
+  {
+    "prompt": "What is the length of 'pneumonoultramicroscopicsilicovolcanoconiosis'?"
+  },
+  {
+    "prompt": "Count the characters in 'test'"
+  },
+  {
+    "prompt": "Convert 'hello world' to uppercase"
+  },
+  {
+    "prompt": "Make 'Python is Great' all uppercase"
+  },
+  {
+    "prompt": "Uppercase the string 'abc'"
+  },
+  {
+    "prompt": "Convert 'HELLO WORLD' to lowercase"
+  },
+  {
+    "prompt": "Make 'SCREAMING' lowercase"
+  },
+  {
+    "prompt": "Lowercase 'ABC'"
+  },
+  {
+    "prompt": "Is 'racecar' a palindrome?"
+  },
+  {
+    "prompt": "Check if 'hello' is a palindrome"
+  },
+  {
+    "prompt": "Is 'madam' a palindrome?"
+  },
+  {
+    "prompt": "Raise 2 to the power of 10"
+  },
+  {
+    "prompt": "What is 3 to the power 4?"
+  },
+  {
+    "prompt": "Calculate 5 raised to the exponent 3"
+  },
+  {
+    "prompt": "Concatenate 'hello' and ' world'"
+  },
+  {
+    "prompt": "Join the strings 'foo' and 'bar'"
+  },
+  {
+    "prompt": "Put together 'good' and 'bye'"
+  },
+  {
+    "prompt": "What is the absolute value of -42?"
+  },
+  {
+    "prompt": "Absolute value of -7.5"
+  },
+  {
+    "prompt": "Get the absolute value of -100"
+  },
+  {
+    "prompt": "Is 42 even?"
+  },
+  {
+    "prompt": "Check if 7 is an even number"
+  },
+  {
+    "prompt": "Is 128 even?"
+  }
+]
