@@ -69,13 +69,16 @@ def build_prompt(
             f"{k}:{v['type']}"
             for k, v in func["parameters"].items()
         )
+        returns = func["returns"]["type"]
         label = label_map[func["name"]]
-        prompt += f"F{label}({params}): {func['description']}\n"
+        prompt += f"F{label} ({params}) -> {returns}: {func['description']}\n"
 
     prompt += "Select the appropriate function for the prompt.\n"
 
     prompt += f"\nPrompt: {user_prompt}\n"
     prompt += "Function: \"F"
+
+    # print(prompt)
 
     return prompt
 
