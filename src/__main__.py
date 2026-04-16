@@ -2,6 +2,7 @@ from function_selector import select_function
 from sys import argv
 from typing import Dict, List
 from llm_sdk.llm_sdk import Small_LLM_Model
+from constrained_decoding import ConstrainedDecoder
 import json
 import time
 
@@ -66,28 +67,37 @@ def main() -> None:
 
     # TODO: verify json validity
     prompts_list: List[Dict[str, str]] = get_data(
-        "/home/vquetier/cc/m3/callmm/data/input/function_calling_tests3.json"
+        "C:\\Users\\queti\\Documents\\call-me-maybe\\data\\input\\function_calling_tests.json"
     )
 
     prompts = [value for d in prompts_list for value in d.values()]
 
-    data = get_data(
-        "/home/vquetier/cc/m3/callmm/data/input/functions_definition2.json"
+    functions = get_data(
+        "C:\\Users\\queti\\Documents\\call-me-maybe\\data\\input\\functions_definition.json"
     )
 
-    llm = Small_LLM_Model()
+    constrained_decoder = ConstrainedDecoder(
+        llm=Small_LLM_Model()
+    )
 
     # TODO: main loop
     total = 0.0
     print("\n===== Generation =====\n")
     valid = 0
-    for p in prompts:
+    for user_prompt in prompts:
         start = time.time()
-        function = select_function(data, p, llm)
+
+        function = select_function(
+            functions=functions,
+            user_prompt=user_prompt,
+            constrained_decoder=constrained_decoder
+        )
+
         end = time.time()
 
-        print(p, function, f"time: {end - start}", sep='\n')
-        if function == EXPECTED[p]:
+        print(user_prompt, function, f"time: {end - start}", sep='\n')
+
+        if function == EXPECTED[user_prompt]:
             print("Valid")
             valid += 1
 
@@ -96,8 +106,10 @@ def main() -> None:
 
         print()
         total += end - start
+
         # TODO: extract parameters from function
         # TODO: format answer as json
+
     print(f"total score: {valid}/{len(prompts)}")
     print(f"total time: {total}")
 
