@@ -1,0 +1,97 @@
+{
+    "number": {
+        "token_sets": {
+            "digits": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+            "sign": ["-"],
+            "dot": ["."]
+        },
+        "start": "start",
+        "states": {
+            "start": {
+                "sets": ["digits", "sign"],
+                "can_end": false,
+                "transitions": {
+                    "sign": "post_sign",
+                    "digits": "post_digits_start"
+                }
+            },
+            "post_sign": {
+                "sets": ["digits"],
+                "can_end": false,
+                "transitions": {
+                    "digits": "post_digits_start"
+                }
+            },
+            "post_digits_start": {
+                "sets": ["digits", "dot"],
+                "can_end": false,
+                "transitions": {
+                    "digits": "post_digits_start",
+                    "dot": "post_dot"
+                }
+            },
+            "post_dot": {
+                "sets": ["digits"],
+                "can_end": false,
+                "transitions": {
+                    "digits": "post_digits_dot"
+                }
+            },
+            "post_digits_dot": {
+                "sets": ["digits"],
+                "can_end": true,
+                "transitions": {
+                    "digits": "post_digits_dot"
+                }
+            }
+        }
+    },
+
+    "integer": {
+        "token_sets": {
+            "digits": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
+            "sign": ["-"]
+        },
+        "start": "start",
+        "states": {
+            "start": {
+                "sets": ["digits", "sign"],
+                "can_end": false,
+                "transitions": {
+                    "sign": "post_sign",
+                    "digits": "post_digits"
+                }
+            },
+            "post_sign": {
+                "sets": ["digits"],
+                "can_end": false,
+                "transitions": {
+                    "digits": "post_digits"
+                }
+            },
+            "post_digits": {
+                "sets": ["digits"],
+                "can_end": true,
+                "transitions": {
+                    "digits": "post_digits"
+                }
+            }
+        }
+    },
+
+    "string": {
+        "token_sets": {
+            "any": "ANY"
+        },
+        "start": "start",
+        "states": {
+            "start": {
+                "sets": ["any"],
+                "can_end": true,
+                "transitions": {
+                    "any": "start"
+                }
+            }
+        }
+    }
+}
