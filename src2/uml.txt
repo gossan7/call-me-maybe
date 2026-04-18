@@ -1,0 +1,32 @@
+Decoder(ABC, BaseModel)
+    - generer en fonction des methodes abstraite:
+        - get tokens
+        - is ending
+        - remove_end_sequence
+    
+
+TokenTrie
+
+GrammarDecoder:
+    - genere grace au state (doit changer de state)
+    - a une ou plusieurs sequence de fin
+
+TrieDecoder
+    - genere en fonction du Trie
+    - change de node (state) pour chaque token
+    - early exit si le node n'a qu'un path
+
+FreeDecoder
+    - genere sans contrainte
+    - detecte les sequences de fin de gen
+
+
+
+recoit prompt: str et return la reponse
+a des methodes d'init (Trie = init les answers, Grammar = load la config de grammaire)
+
+
+Extractor(ABC, BaseModel)
+
+FunctionExtractor
+ParameterExtractor
