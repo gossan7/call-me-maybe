@@ -15,7 +15,6 @@ class Functions(BaseModel):
         }
 
     def get_parameters(self, name: str) -> Dict:
-        print
         return self.functions_mapping[name]["parameters"]
 
     def get_description(self, name: str) -> str:
