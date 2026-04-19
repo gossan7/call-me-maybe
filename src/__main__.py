@@ -1,4 +1,5 @@
 import json
+import sys
 from typing import List, Dict, Tuple
 from llm_sdk.llm_sdk import Small_LLM_Model
 
@@ -7,7 +8,7 @@ from extractor import Extractor
 
 
 def parse_argv() -> Tuple[str, str, str, str]:
-    return "Qwen/Qwen3-0.6B", "/home/vquetier/cc/m3/callmm/grammar.json", "/home/vquetier/cc/m3/callmm/data/input/functions_definition.json", "/home/vquetier/cc/m3/callmm/data/input/function_calling_tests.json"
+    return "Qwen/Qwen3-0.6B", "/home/vquetier/cc/m3/callmm/grammar.json", "/home/vquetier/cc/m3/callmm/data/input/functions_definition2.json", "/home/vquetier/cc/m3/callmm/data/input/function_calling_tests4.json"
 
 
 def load_data(
@@ -49,11 +50,17 @@ def main() -> None:
 
     result: List[Dict] = []
 
+    i = 0
+
     for user_prompt in prompts:
+        i += 1
+        print(f"{i}/{len(prompts)}:", user_prompt["prompt"])
         answer = extractor.generate_answer(
             user_prompt=user_prompt["prompt"],
             functions=functions
         )
+        json.dump(obj=answer, fp=sys.stdout, indent=2)
+        print('\n')
         result.append(answer)
 
     write_data(result=result)
