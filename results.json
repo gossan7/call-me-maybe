@@ -1,10 +1,341 @@
 [
   {
+    "prompt": "What is the sum of 2 and 3?",
+    "name": "fn_add_numbers",
+    "parameters": {
+      "a": 2.0,
+      "b": 3.0
+    }
+  },
+  {
+    "prompt": "What is the sum of 265 and 345?",
+    "name": "fn_add_numbers",
+    "parameters": {
+      "a": 265.0,
+      "b": 345.0
+    }
+  },
+  {
+    "prompt": "Add 99 and 1",
+    "name": "fn_add_numbers",
+    "parameters": {
+      "a": 99.0,
+      "b": 1.0
+    }
+  },
+  {
+    "prompt": "Greet shrek",
+    "name": "fn_greet",
+    "parameters": {
+      "name": "shrek"
+    }
+  },
+  {
+    "prompt": "Greet john",
+    "name": "fn_greet",
+    "parameters": {
+      "name": "john"
+    }
+  },
+  {
+    "prompt": "Say hello to Alice",
+    "name": "fn_greet",
+    "parameters": {
+      "name": "Alice"
+    }
+  },
+  {
+    "prompt": "Reverse the string 'hello'",
+    "name": "fn_reverse_string",
+    "parameters": {
+      "s": "hello"
+    }
+  },
+  {
+    "prompt": "Reverse the string 'world'",
+    "name": "fn_reverse_string",
+    "parameters": {
+      "s": "world"
+    }
+  },
+  {
+    "prompt": "Reverse 'abcdef'",
+    "name": "fn_reverse_string",
+    "parameters": {
+      "s": "abcdef"
+    }
+  },
+  {
+    "prompt": "What is the square root of 16?",
+    "name": "fn_power",
+    "parameters": {
+      "base": 16.0,
+      "exponent": 1.0
+    }
+  },
+  {
+    "prompt": "Calculate the square root of 144",
+    "name": "fn_power",
+    "parameters": {
+      "base": 144.0,
+      "exponent": 2.0
+    }
+  },
+  {
+    "prompt": "Square root of 81",
+    "name": "fn_power",
+    "parameters": {
+      "base": 81.0,
+      "exponent": 1.0
+    }
+  },
+  {
+    "prompt": "Replace all numbers in \"Hello 34 I'm 233 years old\" with NUMBERS",
+    "name": "fn_substitute_string_with_regex",
+    "parameters": {
+      "source_string": "Hello 34 I'm 233 years old",
+      "regex": "34",
+      "replacement": "34"
+    }
+  },
+  {
+    "prompt": "Replace all vowels in 'Programming is fun' with asterisks",
+    "name": "fn_substitute_string_with_regex",
+    "parameters": {
+      "source_string": "Programming is fun",
+      "regex": "aeiou",
+      "replacement": "****"
+    }
+  },
+  {
+    "prompt": "Substitute the word 'cat' with 'dog' in 'The cat sat on the mat with another cat'",
+    "name": "fn_substitute_string_with_regex",
+    "parameters": {
+      "source_string": "The cat sat on the mat with another cat",
+      "regex": "cat",
+      "replacement": "dog"
+    }
+  },
+  {
+    "prompt": "Multiply 7 and 8",
+    "name": "fn_multiply_numbers",
+    "parameters": {
+      "a": 7.0,
+      "b": 8.0
+    }
+  },
+  {
     "prompt": "What is 12 times 15?",
     "name": "fn_multiply_numbers",
     "parameters": {
       "a": 12.0,
       "b": 15.0
+    }
+  },
+  {
+    "prompt": "Calculate the product of 3 and 99",
+    "name": "fn_multiply_numbers",
+    "parameters": {
+      "a": 3.0,
+      "b": 99.0
+    }
+  },
+  {
+    "prompt": "Divide 100 by 4",
+    "name": "fn_divide_numbers",
+    "parameters": {
+      "numerator": 100.0,
+      "denominator": 4.0
+    }
+  },
+  {
+    "prompt": "What is 999 divided by 3?",
+    "name": "fn_divide_numbers",
+    "parameters": {
+      "numerator": 999.0,
+      "denominator": 3.0
+    }
+  },
+  {
+    "prompt": "Divide 50 by 7",
+    "name": "fn_divide_numbers",
+    "parameters": {
+      "numerator": 50.0,
+      "denominator": 7.0
+    }
+  },
+  {
+    "prompt": "How long is the string 'hello world'?",
+    "name": "fn_string_length",
+    "parameters": {
+      "s": "hello world"
+    }
+  },
+  {
+    "prompt": "What is the length of 'pneumonoultramicroscopicsilicovolcanoconiosis'?",
+    "name": "fn_string_length",
+    "parameters": {
+      "s": "pneumonoultramicroscopicsilicovolcanoconiosis"
+    }
+  },
+  {
+    "prompt": "Count the characters in 'test'",
+    "name": "fn_string_length",
+    "parameters": {
+      "s": "test"
+    }
+  },
+  {
+    "prompt": "Convert 'hello world' to uppercase",
+    "name": "fn_to_uppercase",
+    "parameters": {
+      "s": "hello world"
+    }
+  },
+  {
+    "prompt": "Make 'Python is Great' all uppercase",
+    "name": "fn_to_uppercase",
+    "parameters": {
+      "s": "Python is Great"
+    }
+  },
+  {
+    "prompt": "Uppercase the string 'abc'",
+    "name": "fn_to_uppercase",
+    "parameters": {
+      "s": "abc"
+    }
+  },
+  {
+    "prompt": "Convert 'HELLO WORLD' to lowercase",
+    "name": "fn_to_lowercase",
+    "parameters": {
+      "s": "HELLO WORLD"
+    }
+  },
+  {
+    "prompt": "Make 'SCREAMING' lowercase",
+    "name": "fn_to_lowercase",
+    "parameters": {
+      "s": "SCREAMING"
+    }
+  },
+  {
+    "prompt": "Lowercase 'ABC'",
+    "name": "fn_to_lowercase",
+    "parameters": {
+      "s": "ABC"
+    }
+  },
+  {
+    "prompt": "Is 'racecar' a palindrome?",
+    "name": "fn_is_palindrome",
+    "parameters": {
+      "s": "racecar"
+    }
+  },
+  {
+    "prompt": "Check if 'hello' is a palindrome",
+    "name": "fn_is_palindrome",
+    "parameters": {
+      "s": "hello"
+    }
+  },
+  {
+    "prompt": "Is 'madam' a palindrome?",
+    "name": "fn_is_palindrome",
+    "parameters": {
+      "s": "madam"
+    }
+  },
+  {
+    "prompt": "Raise 2 to the power of 10",
+    "name": "fn_power",
+    "parameters": {
+      "base": 2.0,
+      "exponent": 10.0
+    }
+  },
+  {
+    "prompt": "What is 3 to the power 4?",
+    "name": "fn_power",
+    "parameters": {
+      "base": 3.0,
+      "exponent": 4.0
+    }
+  },
+  {
+    "prompt": "Calculate 5 raised to the exponent 3",
+    "name": "fn_power",
+    "parameters": {
+      "base": 5.0,
+      "exponent": 3.0
+    }
+  },
+  {
+    "prompt": "Concatenate 'hello' and ' world'",
+    "name": "fn_concat_strings",
+    "parameters": {
+      "a": "hello",
+      "b": " world"
+    }
+  },
+  {
+    "prompt": "Join the strings 'foo' and 'bar'",
+    "name": "fn_concat_strings",
+    "parameters": {
+      "a": "hello",
+      "b": "bar"
+    }
+  },
+  {
+    "prompt": "Put together 'good' and 'bye'",
+    "name": "fn_concat_strings",
+    "parameters": {
+      "a": "good",
+      "b": "bye"
+    }
+  },
+  {
+    "prompt": "What is the absolute value of -42?",
+    "name": "fn_absolute_value",
+    "parameters": {
+      "n": 42.0
+    }
+  },
+  {
+    "prompt": "Absolute value of -7.5",
+    "name": "fn_absolute_value",
+    "parameters": {
+      "n": 7.5
+    }
+  },
+  {
+    "prompt": "Get the absolute value of -100",
+    "name": "fn_absolute_value",
+    "parameters": {
+      "n": 100.0
+    }
+  },
+  {
+    "prompt": "Is 42 even?",
+    "name": "fn_is_even",
+    "parameters": {
+      "n": 42.0
+    }
+  },
+  {
+    "prompt": "Check if 7 is an even number",
+    "name": "fn_is_even",
+    "parameters": {
+      "n": 7.0
+    }
+  },
+  {
+    "prompt": "Is 128 even?",
+    "name": "fn_is_even",
+    "parameters": {
+      "n": 128.0
     }
   }
 ]

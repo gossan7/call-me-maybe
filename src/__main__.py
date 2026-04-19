@@ -1,14 +1,28 @@
 import json
 import sys
+
 from typing import List, Dict, Tuple
+from dotenv import load_dotenv
+
 from llm_sdk.llm_sdk import Small_LLM_Model
 
-from structures import Functions
+from spinner import Spinner
 from extractor import Extractor
+from structures import Functions
+
+load_dotenv()
+
+
+def hide_cursor() -> None:
+    print("\033[?25l", end="", flush=True)
+
+
+def show_cursor() -> None:
+    print("\033[?25h", end="", flush=True)
 
 
 def parse_argv() -> Tuple[str, str, str, str]:
-    return "Qwen/Qwen3-0.6B", "/home/vquetier/cc/m3/callmm/grammar.json", "/home/vquetier/cc/m3/callmm/data/input/functions_definition2.json", "/home/vquetier/cc/m3/callmm/data/input/function_calling_tests4.json"
+    return "Qwen/Qwen3-0.6B", "/home/vquetier/cc/m3/callmm/grammar.json", "/home/vquetier/cc/m3/callmm/data/input/functions_definition2.json", "/home/vquetier/cc/m3/callmm/data/input/function_calling_tests2.json"
 
 
 def load_data(
@@ -32,6 +46,8 @@ def write_data(result: List[Dict]) -> None:
 
 
 def main() -> None:
+    hide_cursor()
+
     model_name, grammar_file, functions_file, prompts_file = parse_argv()
     grammar, functions, prompts = load_data(
         grammar_file=grammar_file,
@@ -50,21 +66,29 @@ def main() -> None:
 
     result: List[Dict] = []
 
-    i = 0
+    print("\nGenerating...")
+
+    spinner = Spinner(total_prompts=len(prompts))
+    spinner.start()
 
     for user_prompt in prompts:
-        i += 1
-        print(f"{i}/{len(prompts)}:", user_prompt["prompt"])
+        spinner.update_message()
         answer = extractor.generate_answer(
             user_prompt=user_prompt["prompt"],
             functions=functions
         )
-        json.dump(obj=answer, fp=sys.stdout, indent=2)
-        print('\n')
         result.append(answer)
+    spinner.stop()
+    print()
 
     write_data(result=result)
 
 
 if __name__ == "__main__":
-    main()
+    try:
+        hide_cursor()
+        main()
+    except Exception as e:
+        print(e)
+    finally:
+        show_cursor()
