@@ -12,9 +12,10 @@ class Extractor(BaseModel):
     grammar: Dict
 
     def build_prompt_for_function(
-            self,
-            user_prompt: str,
-            functions: Functions) -> str:
+        self,
+        user_prompt: str,
+        functions: Functions
+    ) -> str:
         prompt_list = []
 
         for name in functions.get_names_list():
@@ -38,10 +39,10 @@ class Extractor(BaseModel):
         return '\n'.join(prompt_list)
 
     def get_function(
-            self,
-            user_prompt: str,
-            functions: Functions,
-            answer: Dict
+        self,
+        user_prompt: str,
+        functions: Functions,
+        answer: Dict
     ) -> None:
 
         decoder = TrieDecoder(
@@ -78,11 +79,11 @@ class Extractor(BaseModel):
                 )
 
     def build_prompt_for_parameter(
-            self,
-            user_prompt: str,
-            functions: Functions,
-            parameter: str,
-            answer: Dict
+        self,
+        user_prompt: str,
+        functions: Functions,
+        parameter: str,
+        answer: Dict
     ) -> str:
 
         prompt_list = []
@@ -104,7 +105,11 @@ class Extractor(BaseModel):
 
         prompt_list.append(f"Prompt: {user_prompt}")
 
-        params = [f"{name} = {value}" for name, value in answer["parameters"]]
+        params = [
+            f"{name} = {value}" for name,
+            value in answer["parameters"].items()
+        ]
+
         params.append(f"{parameter} = ")
 
         prompt_list.append(", ".join(params))
@@ -119,9 +124,10 @@ class Extractor(BaseModel):
         return '\n'.join(prompt_list)
 
     def convert_parameter(
-            self,
-            result: str,
-            parameter_type: str) -> int | float | bool | str:
+        self,
+        result: str,
+        parameter_type: str
+    ) -> int | float | bool | str:
         match parameter_type:
             case "integer":
                 return int(result)
@@ -133,27 +139,32 @@ class Extractor(BaseModel):
                 return result
 
     def get_parameters(
-            self,
-            user_prompt: str,
-            functions: Functions,
-            answer: Dict) -> None:
+        self,
+        user_prompt: str,
+        functions: Functions,
+        answer: Dict
+    ) -> None:
+
         answer["parameters"] = {}
-        for parameter in functions.get_parameters(name=answer["name"]):
+
+        for name, value in \
+                functions.get_parameters(name=answer["name"]).items():
             decoder = self.get_decoder_for_parameter(
-                parameter_type=parameter["type"])
+                parameter_type=value["type"]
+            )
 
             prompt = self.build_prompt_for_parameter(
                 user_prompt=user_prompt,
                 functions=functions,
-                parameter=parameter,
+                parameter=name,
                 answer=answer
             )
 
             result = decoder.generate(prompt=prompt)
 
-            answer["parameters"][parameter["name"]] = self.convert_parameter(
+            answer["parameters"][name] = self.convert_parameter(
                 result=result,
-                parameter_type=parameter["type"]
+                parameter_type=value["type"]
             )
 
     def generate_answer(self, user_prompt: str, functions: Functions) -> Dict:
@@ -167,10 +178,10 @@ class Extractor(BaseModel):
             answer=answer
         )
 
-        # self.get_parameters(
-        #     user_prompt=user_prompt,
-        #     functions=functions,
-        #     answer=answer
-        # )
+        self.get_parameters(
+            user_prompt=user_prompt,
+            functions=functions,
+            answer=answer
+        )
 
         return answer

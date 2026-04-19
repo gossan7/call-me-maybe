@@ -6,7 +6,7 @@ from structures import Functions
 from extractor import Extractor
 
 
-def parse_argv() -> Tuple[str, str, str]:
+def parse_argv() -> Tuple[str, str, str, str]:
     return "Qwen/Qwen3-0.6B", "/home/vquetier/cc/m3/callmm/grammar.json", "/home/vquetier/cc/m3/callmm/data/input/functions_definition.json", "/home/vquetier/cc/m3/callmm/data/input/function_calling_tests.json"
 
 
@@ -14,7 +14,7 @@ def load_data(
     grammar_file: str,
     functions_file: str,
     prompts_file: str
-) -> Tuple[Dict, Functions, List]:
+) -> Tuple[Dict, Functions, List[Dict]]:
     with open(grammar_file) as f:
         grammar = json.load(f)
     with open(functions_file) as f:
@@ -26,7 +26,8 @@ def load_data(
 
 
 def write_data(result: List[Dict]) -> None:
-    pass
+    with open("results.json", "w") as f:
+        json.dump(result, f, indent=2)
 
 
 def main() -> None:
@@ -50,7 +51,7 @@ def main() -> None:
 
     for user_prompt in prompts:
         answer = extractor.generate_answer(
-            user_prompt=user_prompt,
+            user_prompt=user_prompt["prompt"],
             functions=functions
         )
         result.append(answer)
