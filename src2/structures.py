@@ -12,14 +12,14 @@ class Functions(BaseModel):
             for func in self.functions
         }
 
-    def get_parameters(self, name: str) -> str:
+    def get_parameters(self, name: str) -> Dict:
         return self.functions_mapping[name]["parameters"]
 
     def get_description(self, name: str) -> str:
         return self.functions_mapping[name]["description"]
 
     def get_returns(self, name: str) -> str:
-        return self.functions_mapping[name]["returns"]
+        return self.functions_mapping[name]["returns"]["type"]
 
     def get_names_list(self) -> List[str]:
         return list(self.functions_mapping.keys())
@@ -30,7 +30,12 @@ class TokenTrie(BaseModel):
     children: Dict[int, "TokenTrie"] = {}
     path_count: int = 0
 
-    def add_path(self, tokens: List[int], end_sequences_tokens: List[List[int]]) -> None:
+    def add_path(
+        self,
+        tokens: List[int],
+        end_sequences_tokens: List[List[int]]
+    ) -> None:
+
         self.path_count += 1
 
         node = self
