@@ -1,6 +1,0 @@
-Prompt: What is the sum of 2 and 3?
-fn_add_numbers(a: number, b: number): Add two numbers together and return their sum.
-
-Extract parameters from the prompt.
-
-Parameters: {"a":
