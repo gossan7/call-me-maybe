@@ -102,6 +102,7 @@ class GrammarDecoder(Decoder):
         )
 
     def get_token_from_logits(self, logits):
+        self.generated += 1
         valid_tokens = self.token_grammar.get_available_tokens()
         token = max(valid_tokens, key=lambda t: logits[t])
         self.token_grammar.update_state(token=token)
@@ -114,7 +115,6 @@ class GrammarDecoder(Decoder):
 
 
 class FreeDecoder(Decoder):
-
     def get_token_from_logits(self, logits):
         self.generated += 1
         return logits.index(max(logits))

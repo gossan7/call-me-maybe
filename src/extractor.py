@@ -90,8 +90,15 @@ class Extractor(BaseModel):
 
         name = answer["name"]
 
+        type_mapping = {
+            "number": "float",
+            "integer": "int",
+            "boolean": "bool",
+            "string": "str"
+        }
+
         parameters = ", ".join(
-            f"k: {v['type']}"
+            f"k: {type_mapping.get(v['type'], v['type'])}"
             for k, v in functions.get_parameters(name=name).items()
         )
 
