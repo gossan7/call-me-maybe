@@ -1,5 +1,6 @@
 import json
 import sys
+import atexit
 
 from typing import List, Dict, Tuple
 from dotenv import load_dotenv
@@ -45,9 +46,7 @@ def write_data(result: List[Dict]) -> None:
         json.dump(result, f, indent=2)
 
 
-def main() -> None:
-    hide_cursor()
-
+def main(spinner: Spinner) -> None:
     model_name, grammar_file, functions_file, prompts_file = parse_argv()
     grammar, functions, prompts = load_data(
         grammar_file=grammar_file,
@@ -66,9 +65,8 @@ def main() -> None:
 
     result: List[Dict] = []
 
+    spinner.total_prompts = len(prompts)
     print("\nGenerating...")
-
-    spinner = Spinner(total_prompts=len(prompts))
     spinner.start()
 
     for user_prompt in prompts:
@@ -86,8 +84,11 @@ def main() -> None:
 
 if __name__ == "__main__":
     try:
+        spinner = Spinner()
         hide_cursor()
-        main()
+        atexit.register(show_cursor)
+        atexit.register(spinner.stop)
+        main(spinner=spinner)
     except Exception as e:
         print(e)
     finally:

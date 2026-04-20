@@ -3,18 +3,18 @@ import time
 
 
 class Spinner:
-    def __init__(self, total_prompts: int) -> None:
+    def __init__(self) -> None:
         self.current_prompt: int = 0
-        self.total_prompts: int = total_prompts
+        self.total_prompts: int = 0
         self.running: bool = False
         self.thread = None
-        self.message: str = f"{self.current_prompt}/{total_prompts}"
+        self.message: str = f"{self.current_prompt}/{self.total_prompts}"
 
     def _spin(self):
         frames = [
-            '⠟', '⠯',
-            '⠷', '⠾',
-            '⠽', '⠻'
+            '⠻', '⠽',
+            '⠾', '⠷',
+            '⠯', '⠟',
         ]
 
         i = 0
@@ -40,4 +40,17 @@ class Spinner:
     def stop(self):
         self.running = False
         self.thread.join()
-        print(f"\r{self.message} Done !{' ' * 40}\r", end="", flush=True)
+
+        if self.current_prompt == self.total_prompts:
+            print(
+                f"\r{self.message} Done !{' ' * 40}\r",
+                end="",
+                flush=True
+            )
+
+        else:
+            print(
+                f"\r{self.message} Couldn't finish generating.{' ' * 40}\r",
+                end="",
+                flush=True
+            )
