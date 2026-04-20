@@ -3,6 +3,7 @@ from pydantic import BaseModel
 from llm_sdk.llm_sdk import Small_LLM_Model
 
 from structures import Functions
+from spinner import Spinner
 from decoders import Decoder, TrieDecoder, GrammarDecoder, FreeDecoder
 
 
@@ -10,6 +11,17 @@ class Extractor(BaseModel):
     model_config = {"arbitrary_types_allowed": True}
     llm: Small_LLM_Model
     grammar: Dict
+    spinner: Spinner
+    debug_mode: bool = False
+
+    def debug(self, text: str) -> None:
+        """Print debug information above the spinner.
+
+        Args:
+            text: Debug text to display.
+        """
+        if self.debug_mode:
+            self.spinner.print_above(text)
 
     def build_prompt_for_function(
         self,
@@ -25,7 +37,11 @@ class Extractor(BaseModel):
                 f"{name}: {description}"
             )
 
-        prompt_list.append("Select the appropriate function for the prompt.")
+        prompt_list.append(
+            "Select the appropriate function for the prompt. " +
+            "Ensure it is correct"
+        )
+
         prompt_list.append(f"Prompt: {user_prompt}")
         prompt_list.append("Function: \"")
 
@@ -50,6 +66,15 @@ class Extractor(BaseModel):
         )
 
         answer["name"] = decoder.generate(prompt=prompt)
+
+        params = functions.get_parameters(answer["name"])
+
+        params_string = ", ".join(
+            f"{k}: {v['type']}"
+            for k, v in params.items()
+        )
+
+        self.debug(f"  Function: {answer['name']}({params_string})")
 
     def get_decoder_for_parameter(self, parameter_type: str) -> Decoder:
         match parameter_type:
@@ -91,7 +116,7 @@ class Extractor(BaseModel):
         }
 
         parameters = ", ".join(
-            f"k: {type_mapping.get(v['type'], v['type'])}"
+            f"{k}: {type_mapping.get(v['type'], v['type'])}"
             for k, v in functions.get_parameters(name=name).items()
         )
 
@@ -99,6 +124,10 @@ class Extractor(BaseModel):
 
         prompt_list.append(
             f"{name}({parameters}): {description}"
+        )
+
+        prompt_list.append(
+            "Pick the right parameters. Ensure it is correct."
         )
 
         prompt_list.append(f"Prompt: {user_prompt}")
@@ -165,10 +194,14 @@ class Extractor(BaseModel):
                 parameter_type=value["type"]
             )
 
+            self.debug(f"    {name} = {answer['parameters'][name]}")
+
     def generate_answer(self, user_prompt: str, functions: Functions) -> Dict:
         answer = {
             "prompt": user_prompt,
         }
+
+        self.debug(f"\n\033[36mPrompt:\033[0m {user_prompt}")
 
         self.get_function(
             user_prompt=user_prompt,

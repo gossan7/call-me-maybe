@@ -283,7 +283,7 @@
     "prompt": "Join the strings 'foo' and 'bar'",
     "name": "fn_concat_strings",
     "parameters": {
-      "a": "hello",
+      "a": "foo",
       "b": "bar"
     }
   },

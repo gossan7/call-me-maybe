@@ -1,5 +1,5 @@
-import threading
 import time
+import threading
 
 
 class Spinner:
@@ -12,6 +12,18 @@ class Spinner:
         self.generated = False
         self.start_time: float = 0.0
         self.end_time: float = 0.0
+        self.lock = threading.Lock()
+        self.debug_gap = False
+
+    def print_above(self, text: str) -> None:
+        """Print text above the spinner line."""
+        with self.lock:
+            print(f"\r{' ' * 60}\r", end="", flush=True)
+            if self.debug_gap:
+                print(f"\033[A\r{' ' * 60}\r", end="", flush=True)
+            print(text)
+            print()
+            self.debug_gap = True
 
     def _spin(self):
         frames = [
@@ -22,11 +34,18 @@ class Spinner:
 
         i = 0
         while self.running:
-            print(
-                f"\r{self.message} \033[36m{frames[i % 6]}\033[0m",
-                end="",
-                flush=True
-            )
+            now = time.time()
+
+            sec = now - self.start_time
+
+            loading = f"\033[36m{frames[i % 6]}\033[0m"
+
+            with self.lock:
+                print(
+                    f"\r({sec:.2f}s) {self.message} {loading}",
+                    end="",
+                    flush=True
+                )
 
             i += 1
             time.sleep(0.10)
@@ -48,23 +67,21 @@ class Spinner:
         self.running = False
         self.end_time = time.time()
         self.thread.join()
+        generation_time = self.end_time - self.start_time
 
         if self.generated:
+
             print(
-                f"\r{self.message} Done !{' ' * 10}\r",
+                f"\r({generation_time:.2f}s) {self.message} Done !\r",
                 end="",
                 flush=True
             )
-
-            generation_time = self.end_time - self.start_time
-
-            print(f"Took {generation_time:.3f} to generate answers.")
 
         else:
             print(
-                f"\r{self.message} Couldn't finish generating.{' ' * 10}\r",
+                f"\r({generation_time:.2f}s) {self.message} "
+                f"Couldn't finish generating. {' ' * 10}\r",
                 end="",
-                flush=True
-            )
+                flush=True)
 
         print()

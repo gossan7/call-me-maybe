@@ -71,6 +71,13 @@ def parse_argv() -> argparse.Namespace:
         help="Model name to use for inference."
     )
 
+    parser.add_argument(
+        "--debug",
+        action="store_true",
+        default=False,
+        help="Print generation details in real time."
+    )
+
     return parser.parse_args()
 
 
@@ -141,13 +148,14 @@ def main(spinner: Spinner) -> None:
     extractor = Extractor(
         llm=llm,
         grammar=grammar_data,
+        spinner=spinner,
+        debug_mode=args.debug
     )
 
     result: List[Dict] = []
 
     spinner.total_prompts = len(prompts_data)
     print("\nGenerating...")
-    spinner.update_message()
     spinner.start()
 
     for user_prompt in prompts_data:
