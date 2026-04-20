@@ -155,16 +155,17 @@ def main(spinner: Spinner) -> None:
     result: List[Dict] = []
 
     spinner.total_prompts = len(prompts_data)
+    spinner.update_message()
     print("\nGenerating...")
     spinner.start()
 
     for user_prompt in prompts_data:
-        spinner.update_message()
         answer = extractor.generate_answer(
             user_prompt=user_prompt["prompt"],
             functions=functions
         )
         result.append(answer)
+        spinner.update_message()
 
     spinner.generated = True
     spinner.stop()

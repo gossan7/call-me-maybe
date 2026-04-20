@@ -89,6 +89,24 @@ class TrieDecoder(Decoder):
 
         return super().format_output(generated=generated)
 
+    def generate(self, prompt: str) -> str:
+        prompt_tokens: List[int] = self.llm.encode(prompt).tolist()[0]
+        generated: List[int] = []
+
+        while not self.is_generation_ending(generated=generated):
+            while len(self.node.children) == 1:
+                token = list(self.node.children.keys())[0]
+                generated.append(token)
+                prompt_tokens.append(token)
+                self.node = self.node.children[token]
+
+            logits = self.llm.get_logits_from_input_ids(prompt_tokens)
+            token = self.get_token_from_logits(logits)
+            generated.append(token)
+            prompt_tokens.append(token)
+
+        return self.format_output(generated=generated)
+
 
 class GrammarDecoder(Decoder):
     grammar: Dict

@@ -1,10 +1,15 @@
 import time
 import threading
 
+RED = "\033[31m"
+GREEN = "\033[32m"
+CYAN = "\033[36m"
+RESET = "\033[0m"
+
 
 class Spinner:
     def __init__(self) -> None:
-        self.current_prompt: int = 0
+        self.current_prompt: int = -1
         self.total_prompts: int = 0
         self.running: bool = False
         self.thread = None
@@ -13,6 +18,7 @@ class Spinner:
         self.start_time: float = 0.0
         self.end_time: float = 0.0
         self.lock = threading.Lock()
+        self.i = 0
         self.debug_gap = False
 
     def print_above(self, text: str) -> None:
@@ -24,30 +30,34 @@ class Spinner:
             print(text)
             print()
             self.debug_gap = True
+        self._print_msg()
 
-    def _spin(self):
+    def _print_msg(self) -> None:
         frames = [
             '⠻', '⠽',
             '⠾', '⠷',
             '⠯', '⠟',
         ]
 
-        i = 0
+        now = time.time()
+
+        sec = now - self.start_time
+
+        loading = f"{CYAN}{frames[self.i % 6]}{RESET}"
+
+        with self.lock:
+            print(
+                f"\r({sec:.2f}s) {self.message} {loading}",
+                end="",
+                flush=True
+            )
+
+    def _spin(self):
+
+        self.i = 0
         while self.running:
-            now = time.time()
-
-            sec = now - self.start_time
-
-            loading = f"\033[36m{frames[i % 6]}\033[0m"
-
-            with self.lock:
-                print(
-                    f"\r({sec:.2f}s) {self.message} {loading}",
-                    end="",
-                    flush=True
-                )
-
-            i += 1
+            self._print_msg()
+            self.i += 1
             time.sleep(0.10)
 
     def start(self):
@@ -72,7 +82,8 @@ class Spinner:
         if self.generated:
 
             print(
-                f"\r({generation_time:.2f}s) {self.message} Done !\r",
+                f"\r({generation_time:.2f}s) " +
+                f"{self.message} Done !",
                 end="",
                 flush=True
             )
@@ -80,7 +91,7 @@ class Spinner:
         else:
             print(
                 f"\r({generation_time:.2f}s) {self.message} "
-                f"Couldn't finish generating. {' ' * 10}\r",
+                "Couldn't finish generating.",
                 end="",
                 flush=True)
 

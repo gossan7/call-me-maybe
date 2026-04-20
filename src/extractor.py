@@ -28,20 +28,26 @@ class Extractor(BaseModel):
         user_prompt: str,
         functions: Functions
     ) -> str:
+        """Build the augmented prompt for function selection.
+
+        Args:
+            user_prompt: The user's natural language prompt.
+            functions: Available functions definitions.
+
+        Returns:
+            Formatted prompt string for function selection.
+        """
         prompt_list = []
 
-        for name in functions.get_names_list():
-            description = functions.get_description(name=name)
-
+        for func_name in functions.get_names_list():
+            description = functions.get_description(name=func_name)
             prompt_list.append(
-                f"{name}: {description}"
+                f"{func_name}: {description}"
             )
 
         prompt_list.append(
-            "Select the appropriate function for the prompt. " +
-            "Ensure it is correct"
+            "Select the appropriate function for the prompt."
         )
-
         prompt_list.append(f"Prompt: {user_prompt}")
         prompt_list.append("Function: \"")
 
@@ -103,10 +109,20 @@ class Extractor(BaseModel):
         parameter: str,
         answer: Dict
     ) -> str:
+        """Build the augmented prompt for parameter extraction.
 
-        prompt_list = []
+        Args:
+            user_prompt: The user's natural language prompt.
+            functions: Available functions definitions.
+            parameter: Name of the parameter to extract.
+            answer: Current answer dict with function name
+                and already extracted parameters.
 
-        name = answer["name"]
+        Returns:
+            Formatted prompt string for parameter extraction.
+        """
+        func_name = answer["name"]
+        func_params = functions.get_parameters(name=func_name)
 
         type_mapping = {
             "number": "float",
@@ -115,37 +131,28 @@ class Extractor(BaseModel):
             "string": "str"
         }
 
-        parameters = ", ".join(
+        signature = ", ".join(
             f"{k}: {type_mapping.get(v['type'], v['type'])}"
-            for k, v in functions.get_parameters(name=name).items()
+            for k, v in func_params.items()
         )
 
-        description = functions.get_description(name=name)
+        description = functions.get_description(name=func_name)
 
-        prompt_list.append(
-            f"{name}({parameters}): {description}"
-        )
-
-        prompt_list.append(
-            "Pick the right parameters. Ensure it is correct."
-        )
-
-        prompt_list.append(f"Prompt: {user_prompt}")
-
-        params = [
-            f"{name} = {value}" for name,
-            value in answer["parameters"].items()
+        prompt_list = [
+            f"{func_name}({signature}): {description}",
+            "Extract the parameter values from the prompt.",
+            f"Prompt: {user_prompt}",
         ]
 
-        params.append(f"{parameter} = ")
+        extracted = [
+            f"{k} = {v}" for k, v in answer["parameters"].items()
+        ]
+        extracted.append(f"{parameter} = ")
 
-        prompt_list.append(", ".join(params))
+        prompt_list.append("Parameters: " + ", ".join(extracted))
 
-        if functions.get_parameters(name=name)[parameter]["type"] not in {
-            "number",
-            "integer",
-            "boolean"
-        }:
+        param_type = func_params[parameter]["type"]
+        if param_type not in {"number", "integer", "boolean"}:
             prompt_list[-1] += '\"'
 
         return '\n'.join(prompt_list)
