@@ -4,8 +4,118 @@ from typing import Optional, Any
 
 
 class DataError(Exception):
-    def __init__(self, msg: str = "Not specified"):
+    """Exception raised for invalid input data."""
+
+    def __init__(self, msg: str = "Not specified") -> None:
+        """Initialize DataError with a message.
+
+        Args:
+            msg: Error description.
+        """
         super().__init__(f"DataError: {msg}")
+
+
+def _check_state(
+    type_name: str,
+    state_name: str,
+    state_def: Any,
+    type_def: dict[str, Any]
+) -> Optional[str]:
+    """Validate a single state definition.
+
+    Args:
+        type_name: Name of the grammar type.
+        state_name: Name of the state.
+        state_def: State definition to validate.
+        type_def: Parent type definition for reference.
+
+    Returns:
+        Error message if invalid, None if valid.
+    """
+    prefix = f"Grammar type '{type_name}': state '{state_name}'"
+
+    if not isinstance(state_def, dict):
+        return f"{prefix} must be an object."
+
+    for key in ("sets", "can_end", "transitions"):
+        if key not in state_def:
+            return f"{prefix} missing '{key}'."
+
+    if not isinstance(state_def["sets"], list):
+        return f"{prefix}: 'sets' must be a list."
+
+    if not isinstance(state_def["can_end"], bool):
+        return f"{prefix}: 'can_end' must be a boolean."
+
+    if not isinstance(state_def["transitions"], dict):
+        return f"{prefix}: 'transitions' must be an object."
+
+    for set_name in state_def["sets"]:
+        if set_name not in type_def["token_sets"]:
+            return f"{prefix} references unknown set '{set_name}'."
+
+    for trigger, target in state_def["transitions"].items():
+        if trigger not in type_def["token_sets"]:
+            return (
+                f"{prefix} transition "
+                f"references unknown set '{trigger}'."
+            )
+        if target not in type_def["states"]:
+            return (
+                f"{prefix} transition "
+                f"targets unknown state '{target}'."
+            )
+
+    return None
+
+
+def _check_type(
+    type_name: str,
+    type_def: Any
+) -> Optional[str]:
+    """Validate a single grammar type definition.
+
+    Args:
+        type_name: Name of the grammar type.
+        type_def: Type definition to validate.
+
+    Returns:
+        Error message if invalid, None if valid.
+    """
+    if not isinstance(type_def, dict):
+        return f"Grammar type '{type_name}' must be an object."
+
+    for key in ("token_sets", "start", "states"):
+        if key not in type_def:
+            return f"Grammar type '{type_name}' missing '{key}'."
+
+    if not isinstance(type_def["token_sets"], dict):
+        return (
+            f"Grammar type '{type_name}': "
+            f"'token_sets' must be an object."
+        )
+
+    if not isinstance(type_def["states"], dict):
+        return (
+            f"Grammar type '{type_name}': "
+            f"'states' must be an object."
+        )
+
+    start = type_def["start"]
+    if start not in type_def["states"]:
+        return (
+            f"Grammar type '{type_name}': "
+            f"start state '{start}' not found in states."
+        )
+
+    for state_name, state_def in type_def["states"].items():
+        error = _check_state(
+            type_name, state_name, state_def, type_def
+        )
+        if error:
+            return error
+
+    return None
 
 
 def check_grammar(grammar: Any) -> Optional[str]:
@@ -21,49 +131,58 @@ def check_grammar(grammar: Any) -> Optional[str]:
         return "Grammar must be a JSON object."
 
     for type_name, type_def in grammar.items():
-        if not isinstance(type_def, dict):
-            return f"Grammar type '{type_name}' must be an object."
+        error = _check_type(type_name, type_def)
+        if error:
+            return error
 
-        for key in ("token_sets", "start", "states"):
-            if key not in type_def:
-                return f"Grammar type '{type_name}' missing '{key}'."
+    return None
 
-        if not isinstance(type_def["token_sets"], dict):
-            return f"Grammar type '{type_name}': 'token_sets' must be an object."
 
-        if not isinstance(type_def["states"], dict):
-            return f"Grammar type '{type_name}': 'states' must be an object."
+def _check_function(func: Any, index: int) -> Optional[str]:
+    """Validate a single function definition.
 
-        start = type_def["start"]
-        if start not in type_def["states"]:
-            return f"Grammar type '{type_name}': start state '{start}' not found in states."
+    Args:
+        func: Function definition to validate.
+        index: Index of the function in the list.
 
-        for state_name, state_def in type_def["states"].items():
-            if not isinstance(state_def, dict):
-                return f"Grammar type '{type_name}': state '{state_name}' must be an object."
+    Returns:
+        Error message if invalid, None if valid.
+    """
+    if not isinstance(func, dict):
+        return f"Function at index {index} must be an object."
 
-            for key in ("sets", "can_end", "transitions"):
-                if key not in state_def:
-                    return f"Grammar type '{type_name}': state '{state_name}' missing '{key}'."
+    for key in ("name", "description", "parameters", "returns"):
+        if key not in func:
+            return f"Function at index {index} missing '{key}'."
 
-            if not isinstance(state_def["sets"], list):
-                return f"Grammar type '{type_name}': state '{state_name}': 'sets' must be a list."
+    name: str = func["name"]
 
-            if not isinstance(state_def["can_end"], bool):
-                return f"Grammar type '{type_name}': state '{state_name}': 'can_end' must be a boolean."
+    if not isinstance(name, str):
+        return f"Function at index {index}: 'name' must be a string."
 
-            if not isinstance(state_def["transitions"], dict):
-                return f"Grammar type '{type_name}': state '{state_name}': 'transitions' must be an object."
+    if not isinstance(func["description"], str):
+        return f"Function '{name}': 'description' must be a string."
 
-            for set_name in state_def["sets"]:
-                if set_name not in type_def["token_sets"]:
-                    return f"Grammar type '{type_name}': state '{state_name}' references unknown set '{set_name}'."
+    if not isinstance(func["parameters"], dict):
+        return f"Function '{name}': 'parameters' must be an object."
 
-            for trigger, target in state_def["transitions"].items():
-                if trigger not in type_def["token_sets"]:
-                    return f"Grammar type '{type_name}': state '{state_name}' transition references unknown set '{trigger}'."
-                if target not in type_def["states"]:
-                    return f"Grammar type '{type_name}': state '{state_name}' transition targets unknown state '{target}'."
+    if not isinstance(func["returns"], dict):
+        return f"Function '{name}': 'returns' must be an object."
+
+    if "type" not in func["returns"]:
+        return f"Function '{name}': 'returns' missing 'type'."
+
+    for param_name, param_def in func["parameters"].items():
+        if not isinstance(param_def, dict):
+            return (
+                f"Function '{name}': "
+                f"parameter '{param_name}' must be an object."
+            )
+        if "type" not in param_def:
+            return (
+                f"Function '{name}': "
+                f"parameter '{param_name}' missing 'type'."
+            )
 
     return None
 
@@ -84,36 +203,9 @@ def check_functions(functions: Any) -> Optional[str]:
         return "Functions definition must contain at least one function."
 
     for i, func in enumerate(functions):
-        if not isinstance(func, dict):
-            return f"Function at index {i} must be an object."
-
-        for key in ("name", "description", "parameters", "returns"):
-            if key not in func:
-                return f"Function at index {i} missing '{key}'."
-
-        if not isinstance(func["name"], str):
-            return f"Function at index {i}: 'name' must be a string."
-
-        if not isinstance(func["description"], str):
-            return f"Function at index {i}: 'description' must be a string."
-
-        if not isinstance(func["parameters"], dict):
-            return f"Function '{
-                func['name']}': 'parameters' must be an object."
-
-        if not isinstance(func["returns"], dict):
-            return f"Function '{func['name']}': 'returns' must be an object."
-
-        if "type" not in func["returns"]:
-            return f"Function '{func['name']}': 'returns' missing 'type'."
-
-        for param_name, param_def in func["parameters"].items():
-            if not isinstance(param_def, dict):
-                return f"Function '{
-                    func['name']}': parameter '{param_name}' must be an object."
-            if "type" not in param_def:
-                return f"Function '{
-                    func['name']}': parameter '{param_name}' missing 'type'."
+        error = _check_function(func, i)
+        if error:
+            return error
 
     return None
 

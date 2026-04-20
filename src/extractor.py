@@ -19,17 +19,10 @@ class Extractor(BaseModel):
         prompt_list = []
 
         for name in functions.get_names_list():
-            parameters = ", ".join(
-                f"k: {v['type']}"
-                for k, v in functions.get_parameters(name=name).items()
-            )
-
             description = functions.get_description(name=name)
 
-            returns = functions.get_returns(name=name)
-
             prompt_list.append(
-                f"{name} ({parameters}) -> {returns}: {description}"
+                f"{name}: {description}"
             )
 
         prompt_list.append("Select the appropriate function for the prompt.")
@@ -104,10 +97,8 @@ class Extractor(BaseModel):
 
         description = functions.get_description(name=name)
 
-        returns = functions.get_returns(name=name)
-
         prompt_list.append(
-            f"{name} ({parameters}) -> {returns}: {description}"
+            f"{name}({parameters}): {description}"
         )
 
         prompt_list.append(f"Prompt: {user_prompt}")

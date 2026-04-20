@@ -147,6 +147,7 @@ def main(spinner: Spinner) -> None:
 
     spinner.total_prompts = len(prompts_data)
     print("\nGenerating...")
+    spinner.update_message()
     spinner.start()
 
     for user_prompt in prompts_data:
