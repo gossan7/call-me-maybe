@@ -9,6 +9,7 @@ class Spinner:
         self.running: bool = False
         self.thread = None
         self.message: str = f"{self.current_prompt}/{self.total_prompts}"
+        self.generated = False
 
     def _spin(self):
         frames = [
@@ -38,10 +39,12 @@ class Spinner:
         self.message = f"{self.current_prompt}/{self.total_prompts}"
 
     def stop(self):
+        if not self.running:
+            return
         self.running = False
         self.thread.join()
 
-        if self.current_prompt == self.total_prompts:
+        if self.generated:
             print(
                 f"\r{self.message} Done !{' ' * 40}\r",
                 end="",
@@ -54,3 +57,5 @@ class Spinner:
                 end="",
                 flush=True
             )
+
+        print()
