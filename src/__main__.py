@@ -4,7 +4,7 @@ import signal
 import os
 import argparse
 
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Any
 
 from llm_sdk import Small_LLM_Model
 
@@ -81,20 +81,53 @@ def parse_argv() -> argparse.Namespace:
     return parser.parse_args()
 
 
+def _load_json(path: str, label: str) -> Any:
+    """Load and parse a single JSON file.
+
+    Raises:
+        DataError: If the file is missing, unreadable,
+        or contains invalid JSON.
+    """
+    try:
+        with open(path) as f:
+            return json.load(f)
+    except FileNotFoundError:
+        raise DataError(f"{label} file not found: {path}")
+    except IsADirectoryError:
+        raise DataError(f"{label} path is a directory, not a file: {path}")
+    except PermissionError:
+        raise DataError(
+            f"Cannot read {label} file (permission denied): {path}")
+    except json.JSONDecodeError as e:
+        raise DataError(
+            f"Invalid JSON in {label} file {path}: "
+            f"{e.msg} (line {e.lineno}, column {e.colno})"
+        )
+    except OSError as e:
+        raise DataError(f"Could not read {label} file {path}: {e}")
+
+
 def load_data(
     grammar_path: str,
     functions_path: str,
     prompts_path: str
 ) -> Tuple[Dict[str, Dict], List[Dict], List[Dict]]:
-    with open(grammar_path) as f:
-        grammar_data = json.load(f)
+    """Load grammar, functions, and prompts from JSON files.
 
-    with open(functions_path) as f:
-        functions_data = json.load(f)
+    Args:
+        grammar_path: Path to the grammar JSON file.
+        functions_path: Path to the functions definition JSON file.
+        prompts_path: Path to the prompts JSON file.
 
-    with open(prompts_path) as f:
-        prompts_data = json.load(f)
+    Returns:
+        Tuple of (grammar_data, functions_data, prompts_data).
 
+    Raises:
+        DataError: If any file is missing, unreadable, or malformed JSON.
+    """
+    grammar_data = _load_json(grammar_path, "grammar")
+    functions_data = _load_json(functions_path, "functions")
+    prompts_data = _load_json(prompts_path, "prompts")
     return grammar_data, functions_data, prompts_data
 
 
