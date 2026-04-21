@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Any
 from pydantic import BaseModel
 
 from llm_sdk import Small_LLM_Model
@@ -11,7 +11,7 @@ from .decoders import Decoder, TrieDecoder, GrammarDecoder, FreeDecoder
 class Extractor(BaseModel):
     model_config = {"arbitrary_types_allowed": True}
     llm: Small_LLM_Model
-    grammar: Dict
+    grammar: Dict[str, Any]
     spinner: Spinner
     debug_mode: bool = False
 
@@ -58,7 +58,7 @@ class Extractor(BaseModel):
         self,
         user_prompt: str,
         functions: Functions,
-        answer: Dict
+        answer: Dict[str, Any]
     ) -> None:
 
         decoder = TrieDecoder(
@@ -108,7 +108,7 @@ class Extractor(BaseModel):
         user_prompt: str,
         functions: Functions,
         parameter: str,
-        answer: Dict
+        answer: Dict[str, Any]
     ) -> str:
         """Build the augmented prompt for parameter extraction.
 
@@ -184,7 +184,7 @@ class Extractor(BaseModel):
         self,
         user_prompt: str,
         functions: Functions,
-        answer: Dict
+        answer: Dict[str, Any]
     ) -> None:
 
         answer["parameters"] = {}
@@ -211,7 +211,11 @@ class Extractor(BaseModel):
 
             self.debug(f"    {name}: {answer['parameters'][name]}")
 
-    def generate_answer(self, user_prompt: str, functions: Functions) -> Dict:
+    def generate_answer(
+        self,
+        user_prompt: str,
+        functions: Functions
+    ) -> Dict[str, Any]:
         answer = {
             "prompt": user_prompt,
         }

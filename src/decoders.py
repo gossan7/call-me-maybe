@@ -111,7 +111,7 @@ class TrieDecoder(Decoder):
 
 
 class GrammarDecoder(Decoder):
-    grammar: Dict
+    grammar: Dict[str, Any]
     token_grammar: TokenGrammar | None = Field(default=None, init=False)
 
     def model_post_init(self, _: Any) -> None:

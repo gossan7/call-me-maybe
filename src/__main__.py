@@ -111,7 +111,9 @@ def load_data(
     grammar_path: str,
     functions_path: str,
     prompts_path: str
-) -> Tuple[Dict[str, Dict], List[Dict], List[Dict]]:
+) -> Tuple[Dict[str, Dict[Any, Any]],
+           List[Dict[Any, Any]],
+           List[Dict[Any, Any]]]:
     """Load grammar, functions, and prompts from JSON files.
 
     Args:
@@ -132,7 +134,7 @@ def load_data(
 
 
 def write_data(
-    result: List[Dict],
+    result: List[Dict[str, Any]],
     output_path: str
 ) -> None:
     """Write results to a JSON file.
@@ -177,7 +179,7 @@ def main(spinner: Spinner) -> None:
         debug_mode=args.debug
     )
 
-    result: List[Dict] = []
+    result: List[Dict[str, Any]] = []
 
     spinner.total_prompts = len(prompts_data)
     spinner.update_message()

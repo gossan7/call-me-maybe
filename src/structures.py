@@ -5,8 +5,8 @@ from llm_sdk import Small_LLM_Model
 
 
 class Functions(BaseModel):
-    functions: List[Dict]
-    functions_mapping: Dict[str, Dict] = {}
+    functions: List[Dict[Any, Any]]
+    functions_mapping: Dict[str, Dict[Any, Any]] = {}
 
     def model_post_init(self, _: Any) -> None:
         self.functions_mapping = {
@@ -14,7 +14,7 @@ class Functions(BaseModel):
             for func in self.functions
         }
 
-    def get_parameters(self, name: str) -> Dict:
+    def get_parameters(self, name: str) -> Dict[str, Dict[str, str]]:
         parameters = self.functions_mapping[name]["parameters"]
         assert isinstance(parameters, dict)
         return parameters
@@ -29,7 +29,7 @@ class Functions(BaseModel):
         assert isinstance(returns, str)
         return returns
 
-    def get_names_list(self) -> List:
+    def get_names_list(self) -> List[str]:
         names_list = list(self.functions_mapping.keys())
         assert isinstance(names_list, list)
         return names_list
@@ -65,7 +65,7 @@ class TokenTrie(BaseModel):
 
 class TokenGrammar(BaseModel):
     model_config = {"arbitrary_types_allowed": True}
-    grammar: Dict
+    grammar: Dict[str, Any]
     end_set: List[str]
     llm: Small_LLM_Model
     state: str = "start"
