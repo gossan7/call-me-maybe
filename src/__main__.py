@@ -8,10 +8,10 @@ from typing import List, Dict, Tuple
 
 from llm_sdk import Small_LLM_Model
 
-from validation import check_data, DataError
-from spinner import Spinner
-from extractor import Extractor
-from structures import Functions
+from .validation import check_data, DataError
+from .spinner import Spinner
+from .extractor import Extractor
+from .structures import Functions
 
 
 try:

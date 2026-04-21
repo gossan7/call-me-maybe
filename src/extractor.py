@@ -1,10 +1,11 @@
 from typing import Dict
 from pydantic import BaseModel
+
 from llm_sdk import Small_LLM_Model
 
-from structures import Functions
-from spinner import Spinner
-from decoders import Decoder, TrieDecoder, GrammarDecoder, FreeDecoder
+from .structures import Functions
+from .spinner import Spinner
+from .decoders import Decoder, TrieDecoder, GrammarDecoder, FreeDecoder
 
 
 class Extractor(BaseModel):
@@ -201,7 +202,7 @@ class Extractor(BaseModel):
                 parameter_type=value["type"]
             )
 
-            self.debug(f"    {name} = {answer['parameters'][name]}")
+            self.debug(f"    {name}: {answer['parameters'][name]}")
 
     def generate_answer(self, user_prompt: str, functions: Functions) -> Dict:
         answer = {
