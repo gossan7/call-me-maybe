@@ -11,6 +11,8 @@ dependencies = [
     "dotenv>=0.9.9",
     "mypy>=1.20.1",
     "flake8>=7.3.0",
+    "regex>=2026.4.4",
+    "types-regex>=2026.4.4.20260408",
 ]
 
 [build-system]

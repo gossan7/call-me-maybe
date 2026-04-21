@@ -120,7 +120,8 @@ class GrammarDecoder(Decoder):
         self.token_grammar = TokenGrammar(
             grammar=self.grammar,
             end_set=self.end_sequences,
-            llm=self.llm
+            llm=self.llm,
+            tokenizer=self.tokenizer
         )
 
     def get_token_from_logits(self, logits: List[float]) -> int:

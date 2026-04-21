@@ -48,8 +48,10 @@ dependencies = [
     { name = "huggingface-hub" },
     { name = "mypy" },
     { name = "pydantic" },
+    { name = "regex" },
     { name = "torch" },
     { name = "transformers" },
+    { name = "types-regex" },
 ]
 
 [package.metadata]
@@ -59,8 +61,10 @@ requires-dist = [
     { name = "huggingface-hub", specifier = ">=0.20.0" },
     { name = "mypy", specifier = ">=1.20.1" },
     { name = "pydantic", specifier = ">=2.13.3" },
+    { name = "regex", specifier = ">=2026.4.4" },
     { name = "torch", specifier = ">=2.0.0" },
     { name = "transformers", specifier = ">=4.40.0" },
+    { name = "types-regex", specifier = ">=2026.4.4.20260408" },
 ]
 
 [[package]]
@@ -1569,6 +1573,15 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/f5/24/cb09efec5cc954f7f9b930bf8279447d24618bb6758d4f6adf2574c41780/typer-0.24.1.tar.gz", hash = "sha256:e39b4732d65fbdcde189ae76cf7cd48aeae72919dea1fdfc16593be016256b45", size = 118613, upload-time = "2026-02-21T16:54:40.609Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/4a/91/48db081e7a63bb37284f9fbcefda7c44c277b18b0e13fbc36ea2335b71e6/typer-0.24.1-py3-none-any.whl", hash = "sha256:112c1f0ce578bfb4cab9ffdabc68f031416ebcc216536611ba21f04e9aa84c9e", size = 56085, upload-time = "2026-02-21T16:54:41.616Z" },
+]
+
+[[package]]
+name = "types-regex"
+version = "2026.4.4.20260408"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/92/42/d7c691fc5a8a8ecfba3f23c1c4c087a089af0767610d88c29201193d8f60/types_regex-2026.4.4.20260408.tar.gz", hash = "sha256:86b2975ff11b06e7f538839821510daea2566d9cb18bb8acde47834315409cf9", size = 13182, upload-time = "2026-04-08T04:31:11.887Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e1/92/e109654a804d11d9b60d67c7b29d64b2beac6b2e3209ea075e268e5a1021/types_regex-2026.4.4.20260408-py3-none-any.whl", hash = "sha256:d436bcc409abf9b06747b7e038014afc6d40ef7b72329655c353a1955534068f", size = 11116, upload-time = "2026-04-08T04:31:11.01Z" },
 ]
 
 [[package]]

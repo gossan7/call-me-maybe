@@ -1,11 +1,19 @@
 [
   {
     "prompt": "What is the sum of 2 and 3?",
-    "error": "1 validation error for GrammarDecoder\ntokenizer\n  Field required [type=missing, input_value={'grammar': {'token_sets'...ject at 0x7f56cab2a7b0>}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+    "name": "fn_add_numbers",
+    "parameters": {
+      "a": 2.0,
+      "b": 3.0
+    }
   },
   {
     "prompt": "What is the sum of 265 and 345?",
-    "error": "1 validation error for GrammarDecoder\ntokenizer\n  Field required [type=missing, input_value={'grammar': {'token_sets'...ject at 0x7f56cab2a7b0>}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+    "name": "fn_add_numbers",
+    "parameters": {
+      "a": 265.0,
+      "b": 345.0
+    }
   },
   {
     "prompt": "Greet shrek",
@@ -37,11 +45,17 @@
   },
   {
     "prompt": "What is the square root of 16?",
-    "error": "1 validation error for GrammarDecoder\ntokenizer\n  Field required [type=missing, input_value={'grammar': {'token_sets'...ject at 0x7f56cab2a7b0>}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+    "name": "fn_get_square_root",
+    "parameters": {
+      "a": 16.0
+    }
   },
   {
     "prompt": "Calculate the square root of 144",
-    "error": "1 validation error for GrammarDecoder\ntokenizer\n  Field required [type=missing, input_value={'grammar': {'token_sets'...ject at 0x7f56cab2a7b0>}, input_type=dict]\n    For further information visit https://errors.pydantic.dev/2.13/v/missing"
+    "name": "fn_get_square_root",
+    "parameters": {
+      "a": 144.0
+    }
   },
   {
     "prompt": "Replace all numbers in \"Hello 34 I'm 233 years old\" with NUMBERS",
