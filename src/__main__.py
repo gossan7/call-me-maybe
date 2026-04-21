@@ -185,10 +185,16 @@ def main(spinner: Spinner) -> None:
     spinner.start()
 
     for user_prompt in prompts_data:
-        answer = extractor.generate_answer(
-            user_prompt=user_prompt["prompt"],
-            functions=functions
-        )
+        try:
+            answer = extractor.generate_answer(
+                user_prompt=user_prompt["prompt"],
+                functions=functions
+            )
+        except (ValueError, KeyError) as e:
+            answer = {
+                "prompt": user_prompt["prompt"],
+                "error": str(e),
+            }
         result.append(answer)
         spinner.update_message()
 

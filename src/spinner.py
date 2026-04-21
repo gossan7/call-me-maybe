@@ -1,29 +1,35 @@
 import time
 import threading
 
+from pydantic import BaseModel, PrivateAttr
+
 RED = "\033[31m"
 GREEN = "\033[32m"
 CYAN = "\033[36m"
 RESET = "\033[0m"
 
 
-class Spinner:
-    def __init__(self) -> None:
-        self.current_prompt: int = -1
-        self.total_prompts: int = 0
-        self.running: bool = False
-        self.thread = threading.Thread(target=self._spin)
-        self.message: str = f"{self.current_prompt}/{self.total_prompts}"
-        self.generated = False
-        self.start_time: float = 0.0
-        self.end_time: float = 0.0
-        self.lock = threading.Lock()
-        self.i = 0
-        self.debug_gap = False
+class Spinner(BaseModel):
+    current_prompt: int = -1
+    total_prompts: int = 0
+    running: bool = False
+    message: str = "-1/0"
+    generated: bool = False
+    start_time: float = 0.0
+    end_time: float = 0.0
+    i: int = 0
+    debug_gap: bool = False
+
+    _thread: threading.Thread = PrivateAttr()
+    _lock: threading.Lock = PrivateAttr()
+
+    def model_post_init(self, _: object) -> None:
+        self._thread = threading.Thread(target=self._spin)
+        self._lock = threading.Lock()
 
     def print_above(self, text: str) -> None:
         """Print text above the spinner line."""
-        with self.lock:
+        with self._lock:
             print(f"\r{' ' * 60}\r", end="", flush=True)
             if self.debug_gap:
                 print(f"\033[A\r{' ' * 60}\r", end="", flush=True)
@@ -45,7 +51,7 @@ class Spinner:
 
         loading = f"{CYAN}{frames[self.i % 6]}{RESET}"
 
-        with self.lock:
+        with self._lock:
             print(
                 f"\r({sec:.2f}s) {self.message} {loading}",
                 end="",
@@ -63,7 +69,7 @@ class Spinner:
     def start(self) -> None:
         self.running = True
         self.start_time = time.time()
-        self.thread.start()
+        self._thread.start()
 
     def update_message(self) -> None:
         self.current_prompt += 1
@@ -75,11 +81,10 @@ class Spinner:
 
         self.running = False
         self.end_time = time.time()
-        self.thread.join()
+        self._thread.join()
         generation_time = self.end_time - self.start_time
 
         if self.generated:
-
             print(
                 f"\r({generation_time:.2f}s) " +
                 f"{self.message} Done !",

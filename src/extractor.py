@@ -163,15 +163,22 @@ class Extractor(BaseModel):
         result: str,
         parameter_type: str
     ) -> int | float | bool | str:
-        match parameter_type:
-            case "integer":
-                return int(result)
-            case "number":
-                return float(result)
-            case "boolean":
-                return True if result == "true" else False
-            case _:
-                return result
+        try:
+            match parameter_type:
+                case "integer":
+                    return int(result)
+                case "number":
+                    return float(result)
+                case "boolean":
+                    return True if result == "true" else False
+                case _:
+                    return result
+        except ValueError as e:
+            print(
+                f"Could not convert decoder output '{result}' to " +
+                f"{parameter_type}: {e}"
+            )
+            return result
 
     def get_parameters(
         self,
