@@ -86,14 +86,6 @@ def load_data(
     functions_path: str,
     prompts_path: str
 ) -> Tuple[Dict[str, Dict], List[Dict], List[Dict]]:
-    """Load and parse a JSON file.
-
-    Args:
-        path: Path to the JSON file.
-
-    Returns:
-        Parsed JSON data, or None if loading failed.
-    """
     with open(grammar_path) as f:
         grammar_data = json.load(f)
 
@@ -182,7 +174,11 @@ if __name__ == "__main__":
             show_cursor()
 
         atexit.register(cleanup)
-        signal.signal(signal.SIGINT, lambda *_: (cleanup(), os._exit(0)))
+
+        def _handle_sigint(signum: int, frame: object) -> None:
+            cleanup()
+            os._exit(0)
+        signal.signal(signal.SIGINT, _handle_sigint)
 
         hide_cursor()
         main(spinner=spinner)

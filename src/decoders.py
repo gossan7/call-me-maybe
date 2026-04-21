@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Any
 from abc import ABC, abstractmethod
 from pydantic import BaseModel, Field
 
@@ -18,7 +18,7 @@ class Decoder(ABC, BaseModel):
     def get_token_from_logits(self, logits: List[float]) -> int:
         pass
 
-    def is_generation_ending(self, generated):
+    def is_generation_ending(self, generated: List[int]) -> bool:
         if self.generated >= self.max_token:
             return True
         answer = self.llm.decode(generated)
@@ -57,7 +57,7 @@ class TrieDecoder(Decoder):
     token_trie: TokenTrie = TokenTrie()
     node: TokenTrie = Field(TokenTrie(), init=False)
 
-    def model_post_init(self, _) -> None:
+    def model_post_init(self, _: Any) -> None:
         end_sequences_tokens: List[List[int]] = [
             self.llm.encode(end_seq).tolist()[0]
             for end_seq in self.end_sequences
@@ -72,18 +72,18 @@ class TrieDecoder(Decoder):
 
         self.node = self.token_trie
 
-    def get_token_from_logits(self, logits) -> int:
+    def get_token_from_logits(self, logits: List[float]) -> int:
         valid_tokens = list(self.node.children.keys())
         token = max(valid_tokens, key=lambda t: logits[t])
         self.node = self.node.children[token]
         return token
 
-    def is_generation_ending(self, generated) -> bool:
+    def is_generation_ending(self, generated: List[int]) -> bool:
         if self.node.path_count == 1:
             return True
         return False
 
-    def format_output(self, generated):
+    def format_output(self, generated: List[int]) -> str:
         while self.node.children:
             token = list(self.node.children.keys())[0]
             generated.append(token)
@@ -114,27 +114,29 @@ class GrammarDecoder(Decoder):
     grammar: Dict
     token_grammar: TokenGrammar | None = Field(default=None, init=False)
 
-    def model_post_init(self, _):
+    def model_post_init(self, _: Any) -> None:
         self.token_grammar = TokenGrammar(
             grammar=self.grammar,
             end_set=self.end_sequences,
             llm=self.llm
         )
 
-    def get_token_from_logits(self, logits):
+    def get_token_from_logits(self, logits: List[float]) -> int:
         self.generated += 1
+        assert isinstance(self.token_grammar, TokenGrammar)
         valid_tokens = self.token_grammar.get_available_tokens()
         token = max(valid_tokens, key=lambda t: logits[t])
         self.token_grammar.update_state(token=token)
         return token
 
-    def is_generation_ending(self, generated):
+    def is_generation_ending(self, generated: List[int]) -> bool:
+        assert isinstance(self.token_grammar, TokenGrammar)
         if self.token_grammar.can_end() or self.generated >= self.max_token:
             return super().is_generation_ending(generated=generated)
         return False
 
 
 class FreeDecoder(Decoder):
-    def get_token_from_logits(self, logits):
+    def get_token_from_logits(self, logits: List[float]) -> int:
         self.generated += 1
         return logits.index(max(logits))

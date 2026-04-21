@@ -1,4 +1,4 @@
-from typing import List, Dict, Set
+from typing import List, Dict, Set, Any
 from pydantic import BaseModel
 
 from llm_sdk import Small_LLM_Model
@@ -8,23 +8,31 @@ class Functions(BaseModel):
     functions: List[Dict]
     functions_mapping: Dict[str, Dict] = {}
 
-    def model_post_init(self, _):
+    def model_post_init(self, _: Any) -> None:
         self.functions_mapping = {
             func["name"]: func
             for func in self.functions
         }
 
     def get_parameters(self, name: str) -> Dict:
-        return self.functions_mapping[name]["parameters"]
+        parameters = self.functions_mapping[name]["parameters"]
+        assert isinstance(parameters, dict)
+        return parameters
 
     def get_description(self, name: str) -> str:
-        return self.functions_mapping[name]["description"]
+        description = self.functions_mapping[name]["description"]
+        assert isinstance(description, str)
+        return description
 
     def get_returns(self, name: str) -> str:
-        return self.functions_mapping[name]["returns"]["type"]
+        returns = self.functions_mapping[name]["returns"]["type"]
+        assert isinstance(returns, str)
+        return returns
 
-    def get_names_list(self) -> List[str]:
-        return list(self.functions_mapping.keys())
+    def get_names_list(self) -> List:
+        names_list = list(self.functions_mapping.keys())
+        assert isinstance(names_list, list)
+        return names_list
 
 
 class TokenTrie(BaseModel):
@@ -64,7 +72,7 @@ class TokenGrammar(BaseModel):
     token_sets: Dict[str, Set[int]] = {}
     end_set_tokens: Set[int] = set()
 
-    def model_post_init(self, _) -> None:
+    def model_post_init(self, _: Any) -> None:
         self.state: str = "start"
 
         self.token_sets = {
@@ -92,15 +100,15 @@ class TokenGrammar(BaseModel):
         self.state = \
             self.grammar["states"][self.state]["transitions"][token_set]
 
-    def can_end(self):
-        return self.grammar["states"][self.state]["can_end"]
+    def can_end(self) -> bool:
+        can_end_flag = self.grammar["states"][self.state]["can_end"]
+        assert isinstance(can_end_flag, bool)
+        return can_end_flag
 
-    def get_available_tokens(self) -> List[int] | None:
+    def get_available_tokens(self) -> List[int]:
         token_set = set()
 
         for set_name, set_content in self.token_sets.items():
-            if set_name == "any":
-                return None
             if set_name in self.grammar["states"][self.state]["sets"]:
                 token_set |= set_content
 

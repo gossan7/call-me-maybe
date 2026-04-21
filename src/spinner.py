@@ -12,7 +12,7 @@ class Spinner:
         self.current_prompt: int = -1
         self.total_prompts: int = 0
         self.running: bool = False
-        self.thread = None
+        self.thread = threading.Thread(target=self._spin)
         self.message: str = f"{self.current_prompt}/{self.total_prompts}"
         self.generated = False
         self.start_time: float = 0.0
@@ -52,7 +52,7 @@ class Spinner:
                 flush=True
             )
 
-    def _spin(self):
+    def _spin(self) -> None:
 
         self.i = 0
         while self.running:
@@ -60,17 +60,16 @@ class Spinner:
             self.i += 1
             time.sleep(0.10)
 
-    def start(self):
+    def start(self) -> None:
         self.running = True
         self.start_time = time.time()
-        self.thread = threading.Thread(target=self._spin)
         self.thread.start()
 
     def update_message(self) -> None:
         self.current_prompt += 1
         self.message = f"{self.current_prompt}/{self.total_prompts}"
 
-    def stop(self):
+    def stop(self) -> None:
         if not self.running:
             return
 
