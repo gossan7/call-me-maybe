@@ -54,6 +54,9 @@
     "prompt": "Calculate the product of 3 and 99"
   },
   {
+    "prompt": "Apply OR gate on True and False"
+  },
+  {
     "prompt": "Divide 100 by 4"
   },
   {

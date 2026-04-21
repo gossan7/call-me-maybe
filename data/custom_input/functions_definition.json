@@ -15,6 +15,21 @@
     }
   },
   {
+    "name": "fn_or_gate",
+    "description": "Apply OR gate on two booleans.",
+    "parameters": {
+      "a": {
+        "type": "boolean"
+      },
+      "b": {
+        "type": "boolean"
+      }
+    },
+    "returns": {
+      "type": "boolean"
+    }
+  },
+  {
     "name": "fn_greet",
     "description": "Generate a greeting message for a person by name.",
     "parameters": {

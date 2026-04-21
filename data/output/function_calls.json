@@ -140,6 +140,14 @@
     }
   },
   {
+    "prompt": "Apply OR gate on True and False",
+    "name": "fn_or_gate",
+    "parameters": {
+      "a": true,
+      "b": false
+    }
+  },
+  {
     "prompt": "Divide 100 by 4",
     "name": "fn_divide_numbers",
     "parameters": {
