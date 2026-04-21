@@ -1,7 +1,7 @@
 from typing import List, Dict, Set
 from pydantic import BaseModel
 
-from llm_sdk.llm_sdk import Small_LLM_Model
+from llm_sdk import Small_LLM_Model
 
 
 class Functions(BaseModel):

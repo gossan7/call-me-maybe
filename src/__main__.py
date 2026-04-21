@@ -6,7 +6,7 @@ import argparse
 
 from typing import List, Dict, Tuple
 
-from llm_sdk.llm_sdk import Small_LLM_Model
+from llm_sdk import Small_LLM_Model
 
 from validation import check_data, DataError
 from spinner import Spinner
@@ -61,7 +61,7 @@ def parse_argv() -> argparse.Namespace:
     parser.add_argument(
         "--grammar",
         type=str,
-        default="grammar.json",
+        default="data/grammar/grammar.json",
         help="Path to grammar definitions JSON file."
     )
     parser.add_argument(

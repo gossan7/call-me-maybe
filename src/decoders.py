@@ -1,7 +1,7 @@
 from typing import List, Dict
 from abc import ABC, abstractmethod
 from pydantic import BaseModel, Field
-from llm_sdk.llm_sdk import Small_LLM_Model
+from llm_sdk import Small_LLM_Model
 from structures import TokenTrie, TokenGrammar
 
 
