@@ -12,6 +12,7 @@ from .validation import check_data, DataError
 from .spinner import Spinner
 from .extractor import Extractor
 from .structures import Functions
+from .tokenizer import Tokenizer
 
 
 try:
@@ -171,9 +172,11 @@ def main(spinner: Spinner) -> None:
     functions = Functions(functions=functions_data)
 
     llm = Small_LLM_Model(model_name=args.model)
+    tokenizer = Tokenizer(llm=llm)
 
     extractor = Extractor(
         llm=llm,
+        tokenizer=tokenizer,
         grammar=grammar_data,
         spinner=spinner,
         debug_mode=args.debug

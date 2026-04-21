@@ -6,11 +6,13 @@ from llm_sdk import Small_LLM_Model
 from .structures import Functions
 from .spinner import Spinner
 from .decoders import Decoder, TrieDecoder, GrammarDecoder, FreeDecoder
+from .tokenizer import Tokenizer
 
 
 class Extractor(BaseModel):
     model_config = {"arbitrary_types_allowed": True}
     llm: Small_LLM_Model
+    tokenizer: Tokenizer
     grammar: Dict[str, Any]
     spinner: Spinner
     debug_mode: bool = False
@@ -63,6 +65,7 @@ class Extractor(BaseModel):
 
         decoder = TrieDecoder(
             llm=self.llm,
+            tokenizer=self.tokenizer,
             end_sequences=['\"', ',', '\n'],
             sequences=functions.get_names_list()
         )
@@ -88,18 +91,21 @@ class Extractor(BaseModel):
             case "number" | "integer":
                 return GrammarDecoder(
                     llm=self.llm,
+                    tokenizer=self.tokenizer,
                     end_sequences=['\"', ',', '\n'],
                     grammar=self.grammar[parameter_type]
                 )
             case "boolean":
                 return TrieDecoder(
                     llm=self.llm,
+                    tokenizer=self.tokenizer,
                     end_sequences=['\"', ',', '\n'],
                     sequences=["true", "false"]
                 )
             case _:
                 return FreeDecoder(
                     llm=self.llm,
+                    tokenizer=self.tokenizer,
                     end_sequences=['\"', '\n']
                 )
 

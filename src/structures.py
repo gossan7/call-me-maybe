@@ -3,6 +3,8 @@ from pydantic import BaseModel
 
 from llm_sdk import Small_LLM_Model
 
+from .tokenizer import Tokenizer
+
 
 class Functions(BaseModel):
     functions: List[Dict[Any, Any]]
@@ -68,6 +70,7 @@ class TokenGrammar(BaseModel):
     grammar: Dict[str, Any]
     end_set: List[str]
     llm: Small_LLM_Model
+    tokenizer: Tokenizer
     state: str = "start"
     token_sets: Dict[str, Set[int]] = {}
     end_set_tokens: Set[int] = set()
@@ -78,14 +81,14 @@ class TokenGrammar(BaseModel):
         self.token_sets = {
             curr_set: {
                 token for elem in self.grammar["token_sets"][curr_set]
-                for token in self.llm.encode(elem).tolist()[0]
+                for token in self.tokenizer.encode(elem)
             }
             for curr_set in self.grammar["token_sets"]
         }
 
         self.end_set_tokens = {
             token for seq in self.end_set
-            for token in self.llm.encode(seq).tolist()[0]
+            for token in self.tokenizer.encode(seq)
         }
 
     def update_state(self, token: int) -> None:

@@ -5,11 +5,13 @@ from pydantic import BaseModel, Field
 from llm_sdk import Small_LLM_Model
 
 from .structures import TokenTrie, TokenGrammar
+from .tokenizer import Tokenizer
 
 
 class Decoder(ABC, BaseModel):
     model_config = {"arbitrary_types_allowed": True}
     llm: Small_LLM_Model
+    tokenizer: Tokenizer
     end_sequences: List[str]
     max_token: int = 50
     generated: int = Field(default=0, init=False)
@@ -21,7 +23,7 @@ class Decoder(ABC, BaseModel):
     def is_generation_ending(self, generated: List[int]) -> bool:
         if self.generated >= self.max_token:
             return True
-        answer = self.llm.decode(generated)
+        answer = self.tokenizer.decode(generated)
         for end_seq in self.end_sequences:
             idx = answer.find(end_seq)
             if idx != -1:
@@ -29,7 +31,7 @@ class Decoder(ABC, BaseModel):
         return False
 
     def format_output(self, generated: List[int]) -> str:
-        answer = self.llm.decode(generated)
+        answer = self.tokenizer.decode(generated)
 
         for end_seq in self.end_sequences:
             idx = answer.find(end_seq)
@@ -40,7 +42,7 @@ class Decoder(ABC, BaseModel):
         return answer
 
     def generate(self, prompt: str) -> str:
-        prompt_tokens: List[int] = self.llm.encode(prompt).tolist()[0]
+        prompt_tokens: List[int] = self.tokenizer.encode(prompt)
         generated: List[int] = []
 
         while not self.is_generation_ending(generated=generated):
@@ -59,12 +61,12 @@ class TrieDecoder(Decoder):
 
     def model_post_init(self, _: Any) -> None:
         end_sequences_tokens: List[List[int]] = [
-            self.llm.encode(end_seq).tolist()[0]
+            self.tokenizer.encode(end_seq)
             for end_seq in self.end_sequences
         ]
 
         for sequence in self.sequences:
-            tokens = self.llm.encode(sequence).tolist()[0]
+            tokens = self.tokenizer.encode(sequence)
             self.token_trie.add_path(
                 tokens=tokens,
                 end_sequences_tokens=end_sequences_tokens
@@ -92,7 +94,7 @@ class TrieDecoder(Decoder):
         return super().format_output(generated=generated)
 
     def generate(self, prompt: str) -> str:
-        prompt_tokens: List[int] = self.llm.encode(prompt).tolist()[0]
+        prompt_tokens: List[int] = self.tokenizer.encode(prompt)
         generated: List[int] = []
 
         while not self.is_generation_ending(generated=generated):
