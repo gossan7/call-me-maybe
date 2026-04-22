@@ -64,7 +64,7 @@ The program accepts these CLI flags:
 $ make run
 
 Generating...
-(33.5s) 11/11 Done !
+(33.56s) 11/11 Done !
 Results written to data/output/function_calls.json
 
 $ cat data/output/function_calls.json
@@ -141,11 +141,10 @@ subclass only overrides `get_token_from_logits` and (where needed)
 Measured on a standard laptop running `Qwen/Qwen3-0.6B` on CPU against the
 11-prompt demo input set.
 
-- **Accuracy:** [X / 11] correct function selections and parameters
-  ([X]% accuracy).
+- **Accuracy:** [9 / 11] correct function selections and parameters (functions 11/11, parameters 9/11) [81.81%].
 - **JSON validity:** 100%. Constrained decoding guarantees every output
   parses without error and matches the schema.
-- **Throughput:** the full 11-prompt run completes in ~33 seconds on CPU,
+- **Throughput:** the full 11-prompt run completes in ~33 seconds on CPU, close to 5s on gpu,
   well under the 5-minute budget.
 - **Reliability:** repeated runs produce identical outputs (argmax
   sampling, no temperature).
@@ -169,12 +168,13 @@ cache on repeated pre-tokens.
   round-trip tests passed.
 - **Multi-byte UTF-8 on decode.** Because BPE pieces are byte-level, a
   single Unicode character can span two tokens. The decoder now concatenates
-  byte-encoded pieces into one string before doing a single UTF-8 decode
-  with `errors="replace"`.
+  byte-encoded pieces into one string before doing a single UTF-8 decode with `errors="replace"`.
 - **Pydantic + threading.** `Spinner` needs a `threading.Thread` and a
   `threading.Lock`, neither of which are native pydantic types. Using
   `PrivateAttr` plus `model_post_init` was the cleanest way to initialise
   them after the pydantic model finishes constructing.
+- **Decoders** Handling multiple decoders with an abstract interface 
+  that works with the three concrete implementations.
 
 ## Testing strategy
 
