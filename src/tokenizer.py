@@ -1,292 +1,272 @@
-"""Portable byte-level BPE tokenizer driven by a Hugging Face tokenizer.json.
+"""Byte-level BPE tokenizer built from a Hugging Face tokenizer.json."""
 
-Works with any model whose tokenizer.json declares a BPE model and a
-byte-level pre-tokenizer (Qwen, GPT-2, Llama 3, Mistral, DeepSeek, ...).
-SentencePiece tokenizers are not supported.
-"""
-
+# json: to parse tokenizer.json.
+# typing: standard annotations. Any is for objects we don't want to
+#   type precisely (compiled regex, raw JSON nodes).
 import json
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
+# `regex` (not stdlib `re`) because we need \p{L}, \p{N}, etc., which
+# stdlib re doesn't support. Aliased as `re` to read naturally.
 import regex as re
 from pydantic import BaseModel, PrivateAttr
 
 from llm_sdk import Small_LLM_Model
 
 
-_DEFAULT_GPT2_PATTERN = (
-    r"'s|'t|'re|'ve|'m|'ll|'d"
-    r"| ?\p{L}+| ?\p{N}+"
-    r"| ?[^\s\p{L}\p{N}]+"
-    r"|\s+(?!\S)|\s+"
-)
+def _build_byte_encoder() -> List[str]:
+    """Reversible mapping: every byte value (0..255) -> one printable char.
 
-
-def _build_byte_encoder() -> Dict[int, str]:
-    """Return GPT-2's reversible byte -> printable-unicode mapping.
-
-    188 already-printable bytes map to themselves; the remaining 68 map
-    to codepoints 256..323 so every byte becomes one visible character.
+    BPE wants to operate on strings, but it was trained on bytes. So we
+    need a way to show any byte as a visible character without collisions.
+    188 of the 256 bytes are already printable (ASCII and most Latin-1),
+    so they map to themselves. The other 68 (control chars, space, etc.)
+    get assigned codepoints 256..323 to avoid collisions with real chars.
     """
+    # Start the mapping with bytes that ARE already printable characters.
+    # Three ranges cover them:
+    #   ord("!")..ord("~")     -> printable ASCII except space
+    #   \xa1..\xac             -> Latin-1 printable range 1
+    #   \xae..\xff             -> Latin-1 printable range 2
+    #                             (skipping \xad, soft hyphen,
+    # which is invisible)
     printable = (
         list(range(ord("!"), ord("~") + 1))
         + list(range(ord("\xa1"), ord("\xac") + 1))
         + list(range(ord("\xae"), ord("\xff") + 1))
     )
-    mapped = printable[:]
+
+    # `mapped[i]` is the codepoint that will stand in for byte `printable[i]`.
+    # For safe bytes it's the byte itself (identity mapping).
+    mapped = printable.copy()
+
+    # Now handle the unsafe bytes. For each byte 0..255 not already in
+    # `printable`, append it and give it the next free codepoint starting
+    # at 256. This way every byte gets exactly one visible stand-in.
     extra = 0
     for b in range(256):
         if b not in printable:
             printable.append(b)
             mapped.append(256 + extra)
             extra += 1
-    return dict(zip(printable, [chr(c) for c in mapped]))
+
+    # Pair them up into {byte_value: stand_in_char}. Examples:
+    #   0x20 (space)   -> chr(256) = "Ġ"
+    #   0x0A (newline) -> chr(266) = "Ċ"
+    #   0x41 ('A')     -> "A" (unchanged)
+
+    dict_mapping = dict(zip(printable, [chr(c) for c in mapped]))
+
+    return [dict_mapping[i] for i in range(256)]
 
 
-def _extract_pretokenizer_pattern(pre_tok: Any) -> str:
-    """Walk a tokenizer.json pre_tokenizer config and return its regex.
+def _extract_pattern(pre_tok: Any) -> str:
+    """Find the pre-tokenizer regex inside a tokenizer.json pre_tokenizer.
 
-    Handles Sequence and Split node types. Falls back to the GPT-2
-    default when the config doesn't name an explicit pattern.
+    The pre_tokenizer field is a tree of nodes. We only care about
+    `Split` nodes (which carry a regex) — if we find one, return its
+    pattern. Other node types (Sequence, ByteLevel, ...) may contain
+    children, so we recurse into them.
     """
-    if not isinstance(pre_tok, dict):
-        return _DEFAULT_GPT2_PATTERN
+    # Guard: if this isn't a dict, there's nothing to look into.
+    if isinstance(pre_tok, dict):
+        # A Split node looks like {"type":"Split","pattern":{"Regex":"..."}}.
+        # This is the only node that carries the regex we want.
+        if pre_tok.get("type") == "Split":
+            pat = pre_tok.get("pattern", {})
+            if isinstance(pat, dict) and "Regex" in pat:
+                return str(pat["Regex"])
 
-    node_type = pre_tok.get("type")
-
-    if node_type == "Sequence":
+        # Not a Split — might be a Sequence or similar container. Recurse
+        # into its children (the "pretokenizers" key) and use the first
+        # pattern we find.
         for child in pre_tok.get("pretokenizers", []):
-            pattern = _extract_pretokenizer_pattern(child)
-            if pattern != _DEFAULT_GPT2_PATTERN:
-                return pattern
-        return _DEFAULT_GPT2_PATTERN
+            found = _extract_pattern(child)
+            if found:
+                return found
 
-    if node_type == "Split":
-        pat = pre_tok.get("pattern", {})
-        if isinstance(pat, dict) and "Regex" in pat:
-            return str(pat["Regex"])
-
-    return _DEFAULT_GPT2_PATTERN
-
-
-def _parse_merges(raw: Any) -> Dict[Tuple[str, str], int]:
-    """Parse merges into a {pair: rank} dict.
-
-    Supports both the legacy "a b" string format and the newer [a, b]
-    list format seen in recent tokenizer.json files.
-    """
-    merges: Dict[Tuple[str, str], int] = {}
-    if not isinstance(raw, list):
-        return merges
-
-    for rank, entry in enumerate(raw):
-        if isinstance(entry, str):
-            parts = entry.split(" ", 1)
-            if len(parts) == 2:
-                merges[(parts[0], parts[1])] = rank
-        elif isinstance(entry, list) and len(entry) == 2:
-            a, b = entry
-            if isinstance(a, str) and isinstance(b, str):
-                merges[(a, b)] = rank
-
-    return merges
+    # Nothing found on this branch. Return empty string; the caller will
+    # compile it, which gives a regex that matches empty strings (fine
+    # for our defaults — every model we care about actually has a Split).
+    return ""
 
 
 class Tokenizer(BaseModel):
     """Byte-level BPE tokenizer built from a Hugging Face tokenizer.json."""
 
+    # We hold a compiled regex (not a pydantic-native type) on `_pattern`.
+    # This flag tells pydantic to accept that kind of field without whining.
     model_config = {"arbitrary_types_allowed": True}
 
+    # The only public field: the LLM wrapper. Everything else we need
+    # (vocab, merges, regex, byte map) we derive from it in model_post_init.
     llm: Small_LLM_Model
 
-    _vocab: Dict[str, int] = PrivateAttr()
-    _inv_vocab: Dict[int, str] = PrivateAttr()
-    _merges: Dict[Tuple[str, str], int] = PrivateAttr()
-    _byte_encoder: Dict[int, str] = PrivateAttr()
-    _byte_decoder: Dict[str, int] = PrivateAttr()
-    _pattern: Any = PrivateAttr()
-    _added_tokens: Dict[str, int] = PrivateAttr()
-    _inv_added_tokens: Dict[int, str] = PrivateAttr()
-    _added_splitter: Any = PrivateAttr()
-    _bpe_cache: Dict[str, List[str]] = PrivateAttr()
+    # All internal state is private. PrivateAttr keeps it outside pydantic's
+    # validation/serialisation machinery — it's just instance state.
+    _vocab: Dict[str, int] = PrivateAttr()          # str piece -> token ID
+    _inv_vocab: Dict[int, str] = PrivateAttr()      # token ID -> str piece
+    _merges: Dict[Tuple[str, str], int] = PrivateAttr()  # (a, b) -> rank
+    _byte_encoder: List[str] = PrivateAttr()   # byte -> stand-in char
+    _byte_decoder: Dict[str, int] = PrivateAttr()   # stand-in char -> byte
+    _pattern: re.Pattern = PrivateAttr()            # compiled pre-tok regex
+    _bpe_cache: Dict[str, List[str]] = PrivateAttr()  # word -> bpe pieces
 
     def model_post_init(self, _: object) -> None:
-        """Load tokenizer.json and precompute derived structures."""
-        config = self._load_config()
+        """Pydantic's 'after-__init__' hook. Build all private state.
 
-        self._load_model(config)
-        self._load_added_tokens(config)
-
-        self._byte_encoder = _build_byte_encoder()
-        self._byte_decoder = {v: k for k, v in self._byte_encoder.items()}
-
-        pattern = _extract_pretokenizer_pattern(config.get("pre_tokenizer"))
-        self._pattern = re.compile(pattern)
-
-        self._bpe_cache = {}
-
-    def _load_config(self) -> Dict[str, Any]:
-        """Read tokenizer.json from disk."""
+        We do it here rather than with default_factory because most of
+        this depends on `self.llm`, which isn't available until the
+        instance finishes constructing.
+        """
+        # Ask the SDK where tokenizer.json lives on disk, then load it.
         path = self.llm.get_path_to_tokenizer_file()
         with open(path, encoding="utf-8") as f:
-            config = json.load(f)
-        if not isinstance(config, dict):
-            raise ValueError("tokenizer.json: root must be an object")
-        return config
+            config: Dict[str, Dict[str, Any]] = json.load(f)
 
-    def _load_model(self, config: Dict[str, Any]) -> None:
-        """Extract vocab and merges from the config."""
-        model = config.get("model", {})
-        if model.get("type") != "BPE":
-            raise ValueError(
-                f"Unsupported tokenizer model type "
-                f"{model.get('type')!r}: only byte-level BPE is supported"
-            )
+        # The "model" subtree holds vocab and merges. Bomb loudly if
+        # the file is malformed — nothing below makes sense without it.
+        model = config["model"]
 
-        vocab = model.get("vocab", {})
-        if not isinstance(vocab, dict):
-            raise ValueError("tokenizer.json: 'vocab' must be an object")
-
-        self._vocab = {str(k): int(v) for k, v in vocab.items()}
+        # vocab is {piece: id}. We need both directions; invert once here.
+        self._vocab = model["vocab"]
         self._inv_vocab = {v: k for k, v in self._vocab.items()}
-        self._merges = _parse_merges(model.get("merges", []))
 
-    def _load_added_tokens(self, config: Dict[str, Any]) -> None:
-        """Extract special/added tokens and build the splitter regex."""
-        added: Dict[str, int] = {}
-        for entry in config.get("added_tokens", []):
-            if isinstance(entry, dict):
-                content = entry.get("content")
-                tid = entry.get("id")
-                if isinstance(content, str) and isinstance(tid, int):
-                    added[content] = tid
-
-        self._added_tokens = added
-        self._inv_added_tokens = {v: k for k, v in added.items()}
-
-        if added:
-            specials = sorted(added, key=len, reverse=True)
-            self._added_splitter = re.compile(
-                "(" + "|".join(re.escape(s) for s in specials) + ")"
-            )
-        else:
-            self._added_splitter = None
-
-    def _find_best_pair(
-        self, tokens: List[str]
-    ) -> Optional[Tuple[str, str]]:
-        """Return the adjacent pair with the lowest merge rank, or None."""
-        best_rank: float = float("inf")
-        best_pair: Optional[Tuple[str, str]] = None
-
-        for pair in zip(tokens, tokens[1:]):
-            rank = self._merges.get(pair)
-            if rank is not None and rank < best_rank:
-                best_rank = rank
-                best_pair = pair
-
-        return best_pair
-
-    def _merge_pair(
-        self, tokens: List[str], pair: Tuple[str, str]
-    ) -> List[str]:
-        """Merge every non-overlapping occurrence of pair, left-to-right."""
-        first, second = pair
-        merged: List[str] = []
-        i = 0
-
-        while i < len(tokens):
-            if (
-                i < len(tokens) - 1
-                and tokens[i] == first
-                and tokens[i + 1] == second
-            ):
-                merged.append(first + second)
-                i += 2
+        # Merges is a LIST of pairs. The list position IS the rank —
+        # rank 0 is applied first (highest priority), rank N last.
+        # Older tokenizer.json uses "a b" strings, newer uses [a, b] lists.
+        # Handle both by checking the type of each entry.
+        self._merges = {}
+        for rank, entry in enumerate(model.get("merges", [])):
+            if isinstance(entry, str):
+                a, b = entry.split(" ", 1)
             else:
-                merged.append(tokens[i])
-                i += 1
+                a, b = entry
+            self._merges[(a, b)] = rank
 
-        return merged
+        # Build the byte <-> stand-in character tables. Same for every
+        # byte-level BPE tokenizer, but we compute per-instance for clarity.
+        self._byte_encoder = _build_byte_encoder()
+        self._byte_decoder = {v: i for i, v in enumerate(self._byte_encoder)}
+
+        # Dig out the pre-tokenizer regex from the config tree, then
+        # compile it once for use in encode().
+        self._pattern = re.compile(
+            _extract_pattern(
+                config.get("pre_tokenizer")))
+
+        # BPE cache starts empty. Fills up as encode() runs and stays
+        # populated for the lifetime of the tokenizer — common words
+        # like "the", "fn_add", etc. benefit a lot.
+        self._bpe_cache = {}
 
     def _bpe(self, word: str) -> List[str]:
-        """Apply BPE merges to a single byte-encoded pre-token."""
+        """Apply BPE merges to a byte-encoded pre-token.
+
+        Algorithm: start with the pre-token as a list of single chars.
+        Repeatedly find the adjacent pair with the lowest merge rank,
+        merge every occurrence of it, and loop. Stop when no adjacent
+        pair is known in the merges table.
+        """
+        # Cache hit: words recur in real text, skip the work.
         if word in self._bpe_cache:
             return self._bpe_cache[word]
 
+        # Initial state: each character is its own "piece". BPE will
+        # glue them into larger pieces.
         tokens = list(word)
-        while len(tokens) >= 2:
-            pair = self._find_best_pair(tokens)
-            if pair is None:
-                break
-            tokens = self._merge_pair(tokens, pair)
 
+        # Loop until no more merges are possible (or we're down to 1 token).
+        while len(tokens) >= 2:
+
+            # --- Step 1: find the best adjacent pair to merge. ---
+            # "Best" = lowest rank in the merges table (lower = earlier
+            # in the training, higher priority).
+            # Using float("inf") as the initial best lets any real rank win.
+            best_rank: float = float("inf")
+            best_pair = None
+
+            # zip(tokens, tokens[1:]) yields every adjacent (left, right) pair.
+            for pair in zip(tokens, tokens[1:]):
+                # Look up this pair's rank. None means "not a known merge".
+                rank = self._merges.get(pair)
+                if rank is not None and rank < best_rank:
+                    best_rank = rank
+                    best_pair = pair
+
+            # If no adjacent pair is known, BPE has reached its fixed point.
+            if best_pair is None:
+                break
+
+            # --- Step 2: merge every occurrence of best_pair. ---
+            # This is done in a SINGLE pass, left-to-right, non-overlapping.
+            # Example: pair=("l","l"), tokens=["l","l","l"] -> ["ll","l"],
+            # not ["l","ll"] (because we consume the first occurrence first).
+            first, second = best_pair
+            merged: List[str] = []
+            i = 0
+            while i < len(tokens):
+                # Condition: we're not at the last index, AND the next two
+                # tokens match our pair. Then concatenate and jump by 2.
+                if (
+                    i < len(tokens) - 1
+                    and tokens[i] == first
+                    and tokens[i + 1] == second
+                ):
+                    merged.append(first + second)
+                    i += 2
+                else:
+                    # No merge here. Keep the current token, move on.
+                    merged.append(tokens[i])
+                    i += 1
+
+            # Replace tokens with the merged version and loop again to
+            # find the next-best pair in this shorter list.
+            tokens = merged
+
+        # Memoise the final piece list so we skip the work next time.
         self._bpe_cache[word] = tokens
         return tokens
 
-    def _byte_encode(self, pretoken: str) -> str:
-        """Map each byte of pretoken to its printable-unicode stand-in."""
-        return "".join(
-            self._byte_encoder[b] for b in pretoken.encode("utf-8")
-        )
+    def encode(self, text: str) -> List[int]:
+        """Text -> list of token IDs. Public entrypoint.
 
-    def _encode_segment(self, text: str) -> List[int]:
-        """Encode a segment known to contain no added/special tokens."""
+        Pipeline: regex-split text into pre-tokens, byte-encode each
+        pre-token to stand-in chars, BPE-merge, vocab-lookup.
+        """
         ids: List[int] = []
 
+        # Step 1: split the input into pre-tokens via the pattern.
+        # findall returns all non-overlapping matches in order.
         for pretoken in self._pattern.findall(text):
-            encoded = self._byte_encode(pretoken)
+            assert isinstance(pretoken, str)
+
+            # Step 2: byte-encode. We go utf-8 first (so 'é' becomes 2
+            # bytes, etc.), then map each byte to its stand-in char.
+            # Result is a string that BPE can operate on.
+            encoded = "".join(
+                self._byte_encoder[b] for b in pretoken.encode("utf-8")
+            )
+
+            # Step 3: BPE the stand-in string into subword pieces.
+            # Step 4: each piece must be in the vocab (it was trained
+            # on exactly these pieces); look it up for its integer ID.
             for tok in self._bpe(encoded):
                 ids.append(self._vocab[tok])
 
         return ids
 
-    def encode(self, text: str) -> List[int]:
-        """Encode text into a list of token IDs.
-
-        Added/special tokens are matched first and emitted as single IDs;
-        remaining segments go through regex pre-tokenization, byte-to-
-        unicode remapping, BPE merging, and vocab lookup.
-        """
-        if self._added_splitter is None:
-            return self._encode_segment(text)
-
-        ids: List[int] = []
-        for segment in self._added_splitter.split(text):
-            if not segment:
-                continue
-            if segment in self._added_tokens:
-                ids.append(self._added_tokens[segment])
-            else:
-                ids.extend(self._encode_segment(segment))
-
-        return ids
-
-    def _byte_decode(self, text: str) -> str:
-        """Byte-decode a unicode-remapped string back to utf-8 text."""
-        raw = bytes(self._byte_decoder[c] for c in text)
-        return raw.decode("utf-8", errors="replace")
-
     def decode(self, tokens: List[int]) -> str:
-        """Decode token IDs back to text.
+        """Token IDs -> text. Public entrypoint."""
+        # Step 1: each ID maps to a stand-in-char string in the vocab.
+        # Concatenate them into one long stand-in-char string.
+        text = "".join(self._inv_vocab[t] for t in tokens)
 
-        Byte-level pieces are buffered and utf-8 decoded together so
-        multi-byte characters split across tokens reconstruct correctly.
-        Added/special tokens flush the buffer and emit literally.
-        """
-        pieces: List[str] = []
-        buffer: List[str] = []
+        # Step 2: reverse the byte-encoding. Each char of `text` was a
+        # stand-in for one byte; collect them back into real bytes.
+        raw = bytes(self._byte_decoder[c] for c in text)
 
-        for t in tokens:
-            if t in self._inv_added_tokens:
-                if buffer:
-                    pieces.append(self._byte_decode("".join(buffer)))
-                    buffer = []
-                pieces.append(self._inv_added_tokens[t])
-            else:
-                buffer.append(self._inv_vocab[t])
-
-        if buffer:
-            pieces.append(self._byte_decode("".join(buffer)))
-
-        return "".join(pieces)
+        # Step 3: those bytes are utf-8. Decode them into a real string.
+        # errors="replace" makes invalid utf-8 become U+FFFD rather than
+        # crashing — useful when decoding partial output mid-generation.
+        return raw.decode("utf-8", errors="replace")
