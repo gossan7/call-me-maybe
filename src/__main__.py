@@ -56,7 +56,7 @@ def parse_argv() -> argparse.Namespace:
     parser.add_argument(
         "--output",
         type=str,
-        default="data/output/function_calls.json",
+        default="data/output/function_calling_results.json",
         help="Path to output results JSON file."
     )
     parser.add_argument(
