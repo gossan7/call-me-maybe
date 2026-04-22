@@ -3,8 +3,6 @@ import threading
 
 from pydantic import BaseModel, PrivateAttr
 
-RED = "\033[31m"
-GREEN = "\033[32m"
 CYAN = "\033[36m"
 RESET = "\033[0m"
 
@@ -24,11 +22,16 @@ class Spinner(BaseModel):
     _lock: threading.Lock = PrivateAttr()
 
     def model_post_init(self, _: object) -> None:
+        """Initialise the worker thread and its output lock."""
         self._thread = threading.Thread(target=self._spin)
         self._lock = threading.Lock()
 
     def print_above(self, text: str) -> None:
-        """Print text above the spinner line."""
+        """Print text on the line above the spinner without disturbing it.
+
+        Args:
+            text: The text to print above the spinner line.
+        """
         with self._lock:
             print(f"\r{' ' * 60}\r", end="", flush=True)
             if self.debug_gap:
@@ -39,6 +42,7 @@ class Spinner(BaseModel):
         self._print_msg()
 
     def _print_msg(self) -> None:
+        """Render the current spinner frame, elapsed time, and message."""
         frames = [
             '⠻', '⠽',
             '⠾', '⠷',
@@ -59,7 +63,7 @@ class Spinner(BaseModel):
             )
 
     def _spin(self) -> None:
-
+        """Run the spinner animation loop until `running` becomes False."""
         self.i = 0
         while self.running:
             self._print_msg()
@@ -67,15 +71,18 @@ class Spinner(BaseModel):
             time.sleep(0.10)
 
     def start(self) -> None:
+        """Start the spinner thread and record the start time."""
         self.running = True
         self.start_time = time.time()
         self._thread.start()
 
     def update_message(self) -> None:
+        """Advance the progress counter and refresh the displayed message."""
         self.current_prompt += 1
         self.message = f"{self.current_prompt}/{self.total_prompts}"
 
     def stop(self) -> None:
+        """Stop the spinner, join its thread, and print a closing line."""
         if not self.running:
             return
 

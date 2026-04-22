@@ -1,11 +1,7 @@
-"""Validation utilities for input data structures."""
-
 from typing import Optional, Any
 
 
 class DataError(Exception):
-    """Exception raised for invalid input data."""
-
     def __init__(self, msg: str = "Not specified") -> None:
         """Initialize DataError with a message.
 

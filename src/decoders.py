@@ -18,9 +18,28 @@ class Decoder(ABC, BaseModel):
 
     @abstractmethod
     def get_token_from_logits(self, logits: List[float]) -> int:
+        """Pick the next token id from the raw model logits.
+
+        Args:
+            logits: One logit per token id from the model.
+
+        Returns:
+            The selected token id.
+        """
         pass
 
     def is_generation_ending(self, generated: List[int]) -> bool:
+        """Return True when generation should stop.
+
+        Stops when the token budget is exhausted or when the decoded
+        text contains any configured end sequence.
+
+        Args:
+            generated: Tokens generated so far.
+
+        Returns:
+            True if generation should end, False otherwise.
+        """
         if self.generated >= self.max_token:
             return True
         answer = self.tokenizer.decode(generated)
@@ -31,6 +50,14 @@ class Decoder(ABC, BaseModel):
         return False
 
     def format_output(self, generated: List[int]) -> str:
+        """Decode generated tokens and truncate at the first end sequence.
+
+        Args:
+            generated: Tokens generated so far.
+
+        Returns:
+            The cleaned output string.
+        """
         answer = self.tokenizer.decode(generated)
 
         for end_seq in self.end_sequences:
@@ -42,6 +69,14 @@ class Decoder(ABC, BaseModel):
         return answer
 
     def generate(self, prompt: str) -> str:
+        """Run the full token-by-token generation loop for `prompt`.
+
+        Args:
+            prompt: The text prompt to condition generation on.
+
+        Returns:
+            The generated output string, truncated at an end sequence.
+        """
         prompt_tokens: List[int] = self.tokenizer.encode(prompt)
         generated: List[int] = []
 
@@ -60,6 +95,7 @@ class TrieDecoder(Decoder):
     node: TokenTrie = Field(TokenTrie(), init=False)
 
     def model_post_init(self, _: Any) -> None:
+        """Build the token trie from the allowed sequences."""
         end_sequences_tokens: List[List[int]] = [
             self.tokenizer.encode(end_seq)
             for end_seq in self.end_sequences
@@ -75,17 +111,41 @@ class TrieDecoder(Decoder):
         self.node = self.token_trie
 
     def get_token_from_logits(self, logits: List[float]) -> int:
+        """Pick the highest-logit token among the current trie children.
+
+        Args:
+            logits: One logit per token id from the model.
+
+        Returns:
+            The selected token id.
+        """
         valid_tokens = list(self.node.children.keys())
         token = max(valid_tokens, key=lambda t: logits[t])
         self.node = self.node.children[token]
         return token
 
     def is_generation_ending(self, generated: List[int]) -> bool:
+        """Return True when the trie has narrowed down to a single path.
+
+        Args:
+            generated: Tokens generated so far (unused here).
+
+        Returns:
+            True once the trie node has no branching left.
+        """
         if self.node.path_count == 1:
             return True
         return False
 
     def format_output(self, generated: List[int]) -> str:
+        """Walk any remaining deterministic trie path before decoding.
+
+        Args:
+            generated: Tokens generated so far.
+
+        Returns:
+            The decoded and truncated output string.
+        """
         while self.node.children:
             token = list(self.node.children.keys())[0]
             generated.append(token)
@@ -94,6 +154,14 @@ class TrieDecoder(Decoder):
         return super().format_output(generated=generated)
 
     def generate(self, prompt: str) -> str:
+        """Run generation while fast-forwarding through deterministic paths.
+
+        Args:
+            prompt: The text prompt to condition generation on.
+
+        Returns:
+            The generated output string.
+        """
         prompt_tokens: List[int] = self.tokenizer.encode(prompt)
         generated: List[int] = []
 
@@ -117,6 +185,7 @@ class GrammarDecoder(Decoder):
     token_grammar: TokenGrammar | None = Field(default=None, init=False)
 
     def model_post_init(self, _: Any) -> None:
+        """Build the grammar state machine from the provided grammar dict."""
         self.token_grammar = TokenGrammar(
             grammar=self.grammar,
             end_set=self.end_sequences,
@@ -125,6 +194,14 @@ class GrammarDecoder(Decoder):
         )
 
     def get_token_from_logits(self, logits: List[float]) -> int:
+        """Pick the highest-logit token among those allowed by the grammar.
+
+        Args:
+            logits: One logit per token id from the model.
+
+        Returns:
+            The selected token id.
+        """
         self.generated += 1
         assert isinstance(self.token_grammar, TokenGrammar)
         valid_tokens = self.token_grammar.get_available_tokens()
@@ -133,6 +210,14 @@ class GrammarDecoder(Decoder):
         return token
 
     def is_generation_ending(self, generated: List[int]) -> bool:
+        """Return True only when the grammar is in an acceptable end state.
+
+        Args:
+            generated: Tokens generated so far.
+
+        Returns:
+            True if generation may end, False otherwise.
+        """
         assert isinstance(self.token_grammar, TokenGrammar)
         if self.token_grammar.can_end() or self.generated >= self.max_token:
             return super().is_generation_ending(generated=generated)
@@ -141,5 +226,13 @@ class GrammarDecoder(Decoder):
 
 class FreeDecoder(Decoder):
     def get_token_from_logits(self, logits: List[float]) -> int:
+        """Pick the single highest-logit token with no constraint at all.
+
+        Args:
+            logits: One logit per token id from the model.
+
+        Returns:
+            The argmax token id.
+        """
         self.generated += 1
         return logits.index(max(logits))

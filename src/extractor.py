@@ -62,7 +62,16 @@ class Extractor(BaseModel):
         functions: Functions,
         answer: Dict[str, Any]
     ) -> None:
+        """Select a function name for the prompt and store it in `answer`.
 
+        Uses a trie-constrained decoder so the LLM can only emit token
+        sequences that spell out one of the available function names.
+
+        Args:
+            user_prompt: The user's natural language prompt.
+            functions: Available functions definitions.
+            answer: Mutable dict; the selected name is stored under "name".
+        """
         decoder = TrieDecoder(
             llm=self.llm,
             tokenizer=self.tokenizer,
@@ -87,6 +96,15 @@ class Extractor(BaseModel):
         self.debug(f"  Function: {answer['name']}({params_string})")
 
     def get_decoder_for_parameter(self, parameter_type: str) -> Decoder:
+        """Return a decoder matching the expected JSON type of a parameter.
+
+        Args:
+            parameter_type: The JSON schema type (number, integer,
+                boolean, string, ...).
+
+        Returns:
+            A Decoder configured to produce tokens valid for that type.
+        """
         match parameter_type:
             case "number" | "integer":
                 return GrammarDecoder(
@@ -169,6 +187,15 @@ class Extractor(BaseModel):
         result: str,
         parameter_type: str
     ) -> int | float | bool | str:
+        """Coerce a decoded string to the Python type matching its schema.
+
+        Args:
+            result: The raw decoded string produced by a decoder.
+            parameter_type: The expected JSON schema type.
+
+        Returns:
+            The converted value, or the raw string if conversion fails.
+        """
         try:
             match parameter_type:
                 case "integer":
@@ -192,7 +219,14 @@ class Extractor(BaseModel):
         functions: Functions,
         answer: Dict[str, Any]
     ) -> None:
+        """Extract every parameter for the chosen function and store them.
 
+        Args:
+            user_prompt: The user's natural language prompt.
+            functions: Available functions definitions.
+            answer: Mutable dict; extracted values are placed under
+                "parameters".
+        """
         answer["parameters"] = {}
 
         for name, value in \
@@ -222,6 +256,17 @@ class Extractor(BaseModel):
         user_prompt: str,
         functions: Functions
     ) -> Dict[str, Any]:
+        """Build the full answer dict for a single prompt.
+
+        Runs function selection followed by parameter extraction.
+
+        Args:
+            user_prompt: The user's natural language prompt.
+            functions: Available functions definitions.
+
+        Returns:
+            A dict with "prompt", "name", and "parameters" keys.
+        """
         answer = {
             "prompt": user_prompt,
         }
