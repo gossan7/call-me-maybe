@@ -46,7 +46,6 @@
             }
         }
     },
-
     "integer": {
         "token_sets": {
             "digits": ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"],
@@ -74,22 +73,6 @@
                 "can_end": true,
                 "transitions": {
                     "digits": "post_digits"
-                }
-            }
-        }
-    },
-
-    "string": {
-        "token_sets": {
-            "any": "ANY"
-        },
-        "start": "start",
-        "states": {
-            "start": {
-                "sets": ["any"],
-                "can_end": true,
-                "transitions": {
-                    "any": "start"
                 }
             }
         }
