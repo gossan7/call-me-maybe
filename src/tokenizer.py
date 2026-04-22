@@ -151,9 +151,9 @@ class Tokenizer(BaseModel):
 
         # Dig out the pre-tokenizer regex from the config tree, then
         # compile it once for use in encode().
-        self._pattern = re.compile(
-            _extract_pattern(
-                config.get("pre_tokenizer")))
+        self._pattern = re.compile(_extract_pattern(
+            config.get("pre_tokenizer")
+        ))
 
         # BPE cache starts empty. Fills up as encode() runs and stays
         # populated for the lifetime of the tokenizer — common words
