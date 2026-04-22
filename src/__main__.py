@@ -85,9 +85,16 @@ def parse_argv() -> argparse.Namespace:
 def _load_json(path: str, label: str) -> Any:
     """Load and parse a single JSON file.
 
+    Args:
+        path: Path to the JSON file.
+        label: Human-readable name of the file, used in error messages.
+
+    Returns:
+        The parsed JSON content.
+
     Raises:
         DataError: If the file is missing, unreadable,
-        or contains invalid JSON.
+            or contains invalid JSON.
     """
     try:
         with open(path) as f:
@@ -154,7 +161,7 @@ def write_data(
 
 
 def main(spinner: Spinner) -> None:
-    """Main entrypoint for the function calling pipeline.
+    """Run the full function calling pipeline end to end.
 
     Args:
         spinner: Spinner instance for progress display.
@@ -190,17 +197,20 @@ def main(spinner: Spinner) -> None:
     spinner.start()
 
     for user_prompt in prompts_data:
-        # try:
-        answer = extractor.generate_answer(
-            user_prompt=user_prompt["prompt"],
-            functions=functions
-        )
-        # except (ValueError, KeyError) as e:
-        #     answer = {
-        #         "prompt": user_prompt["prompt"],
-        #         "error": str(e),
-        #     }
-        result.append(answer)
+        try:
+            answer = extractor.generate_answer(
+                user_prompt=user_prompt["prompt"],
+                functions=functions
+            )
+            result.append(answer)
+
+        except Exception as e:
+            spinner.print_above(
+                f"An error occured with this prompt: {user_prompt}. " +
+                f"Error: {e} " +
+                "Will continue without it."
+            )
+
         spinner.update_message()
 
     spinner.generated = True
@@ -214,14 +224,17 @@ if __name__ == "__main__":
         spinner = Spinner()
 
         def cleanup() -> None:
+            """Stop the spinner and restore the terminal cursor on exit."""
             spinner.stop()
             show_cursor()
 
         atexit.register(cleanup)
 
         def _handle_sigint(signum: int, frame: object) -> None:
+            """Handle SIGINT by cleaning up and exiting immediately."""
             cleanup()
             os._exit(0)
+
         signal.signal(signal.SIGINT, _handle_sigint)
 
         hide_cursor()

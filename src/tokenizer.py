@@ -1,13 +1,6 @@
-"""Byte-level BPE tokenizer built from a Hugging Face tokenizer.json."""
-
-# json: to parse tokenizer.json.
-# typing: standard annotations. Any is for objects we don't want to
-#   type precisely (compiled regex, raw JSON nodes).
 import json
 from typing import Any, Dict, List, Tuple
 
-# `regex` (not stdlib `re`) because we need \p{L}, \p{N}, etc., which
-# stdlib re doesn't support. Aliased as `re` to read naturally.
 import regex as re
 from pydantic import BaseModel, PrivateAttr
 
@@ -15,13 +8,11 @@ from llm_sdk import Small_LLM_Model
 
 
 def _build_byte_encoder() -> List[str]:
-    """Reversible mapping: every byte value (0..255) -> one printable char.
+    """Return GPT-2's reversible byte to printable-unicode table.
 
-    BPE wants to operate on strings, but it was trained on bytes. So we
-    need a way to show any byte as a visible character without collisions.
-    188 of the 256 bytes are already printable (ASCII and most Latin-1),
-    so they map to themselves. The other 68 (control chars, space, etc.)
-    get assigned codepoints 256..323 to avoid collisions with real chars.
+    188 already-printable bytes map to themselves; the remaining 68 map
+    to codepoints 256..323 so every byte becomes a single visible char.
+    The returned list is indexed directly by byte value (0..255).
     """
     printable = (
         list(range(ord("!"), ord("~") + 1))
@@ -45,10 +36,15 @@ def _build_byte_encoder() -> List[str]:
 def _extract_pattern(pre_tok: Any) -> str:
     """Find the pre-tokenizer regex inside a tokenizer.json pre_tokenizer.
 
-    The pre_tokenizer field is a tree of nodes. We only care about
-    `Split` nodes (which carry a regex) — if we find one, return its
-    pattern. Other node types (Sequence, ByteLevel, ...) may contain
-    children, so we recurse into them.
+    The pre_tokenizer field is a tree of nodes. Only `Split` nodes carry
+    a regex; other node types (Sequence, ByteLevel, ...) may contain
+    children, so this function recurses into them.
+
+    Args:
+        pre_tok: A pre_tokenizer subtree from tokenizer.json.
+
+    Returns:
+        The first Regex pattern found, or the empty string when none.
     """
     if isinstance(pre_tok, dict):
         if pre_tok.get("type") == "Split":
@@ -65,7 +61,6 @@ def _extract_pattern(pre_tok: Any) -> str:
 
 
 class Tokenizer(BaseModel):
-    """Byte-level BPE tokenizer built from a Hugging Face tokenizer.json."""
     model_config = {"arbitrary_types_allowed": True}
     llm: Small_LLM_Model
 
@@ -78,11 +73,11 @@ class Tokenizer(BaseModel):
     _bpe_cache: Dict[str, List[str]] = PrivateAttr()
 
     def model_post_init(self, _: object) -> None:
-        """Pydantic's 'after-__init__' hook. Build all private state.
+        """Load tokenizer.json and precompute every derived structure.
 
-        We do it here rather than with default_factory because most of
-        this depends on `self.llm`, which isn't available until the
-        instance finishes constructing.
+        Built here rather than with default_factory because most of the
+        state depends on `self.llm`, which isn't available until pydantic
+        finishes constructing the instance.
         """
         path = self.llm.get_path_to_tokenizer_file()
         with open(path, encoding="utf-8") as f:
@@ -113,10 +108,15 @@ class Tokenizer(BaseModel):
     def _bpe(self, word: str) -> List[str]:
         """Apply BPE merges to a byte-encoded pre-token.
 
-        Algorithm: start with the pre-token as a list of single chars.
-        Repeatedly find the adjacent pair with the lowest merge rank,
-        merge every occurrence of it, and loop. Stop when no adjacent
-        pair is known in the merges table.
+        Starts with `word` as a list of single characters, then repeatedly
+        finds the adjacent pair with the lowest merge rank and merges
+        every occurrence of it, until no more known merges apply.
+
+        Args:
+            word: The byte-encoded pre-token to split into BPE pieces.
+
+        Returns:
+            The list of BPE pieces (each piece is a key in the vocab).
         """
         if word in self._bpe_cache:
             return self._bpe_cache[word]
@@ -158,10 +158,16 @@ class Tokenizer(BaseModel):
         return tokens
 
     def encode(self, text: str) -> List[int]:
-        """Text -> list of token IDs. Public entrypoint.
+        """Encode text into a list of token IDs.
 
         Pipeline: regex-split text into pre-tokens, byte-encode each
         pre-token to stand-in chars, BPE-merge, vocab-lookup.
+
+        Args:
+            text: The text to tokenise.
+
+        Returns:
+            The list of token ids.
         """
         ids: List[int] = []
 
@@ -178,7 +184,14 @@ class Tokenizer(BaseModel):
         return ids
 
     def decode(self, tokens: List[int]) -> str:
-        """Token IDs -> text. Public entrypoint."""
+        """Decode a list of token IDs back into text.
+
+        Args:
+            tokens: The token ids to decode.
+
+        Returns:
+            The reconstructed text.
+        """
         text = "".join(self._inv_vocab[t] for t in tokens)
         raw = bytes(self._byte_decoder[c] for c in text)
         return raw.decode("utf-8", errors="replace")
