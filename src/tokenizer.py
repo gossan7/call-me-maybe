@@ -7,7 +7,7 @@ from pydantic import BaseModel, PrivateAttr
 from llm_sdk import Small_LLM_Model
 
 
-def _build_byte_encoder() -> List[str]:
+def build_byte_encoder() -> List[str]:
     """Return GPT-2's reversible byte to printable-unicode table.
 
     188 already-printable bytes map to themselves; the remaining 68 map
@@ -33,7 +33,7 @@ def _build_byte_encoder() -> List[str]:
     return [dict_mapping[i] for i in range(256)]
 
 
-def _extract_pattern(pre_tok: Any) -> str:
+def extract_pattern(pre_tok: Any) -> str:
     """Find the pre-tokenizer regex inside a tokenizer.json pre_tokenizer.
 
     The pre_tokenizer field is a tree of nodes. Only `Split` nodes carry
@@ -53,7 +53,7 @@ def _extract_pattern(pre_tok: Any) -> str:
                 return str(pat["Regex"])
 
         for child in pre_tok.get("pretokenizers", []):
-            found = _extract_pattern(child)
+            found = extract_pattern(child)
             if found:
                 return found
 
@@ -69,7 +69,7 @@ class Tokenizer(BaseModel):
     _merges: Dict[Tuple[str, str], int] = PrivateAttr()
     _byte_encoder: List[str] = PrivateAttr()
     _byte_decoder: Dict[str, int] = PrivateAttr()
-    _pattern: re.Pattern = PrivateAttr()
+    _pattern: re.Pattern[str] = PrivateAttr()
     _bpe_cache: Dict[str, List[str]] = PrivateAttr()
 
     def model_post_init(self, _: object) -> None:
@@ -96,16 +96,16 @@ class Tokenizer(BaseModel):
                 a, b = entry
             self._merges[(a, b)] = rank
 
-        self._byte_encoder = _build_byte_encoder()
+        self._byte_encoder = build_byte_encoder()
         self._byte_decoder = {v: i for i, v in enumerate(self._byte_encoder)}
 
-        self._pattern = re.compile(_extract_pattern(
+        self._pattern = re.compile(extract_pattern(
             config.get("pre_tokenizer")
         ))
 
         self._bpe_cache = {}
 
-    def _bpe(self, word: str) -> List[str]:
+    def bpe(self, word: str) -> List[str]:
         """Apply BPE merges to a byte-encoded pre-token.
 
         Starts with `word` as a list of single characters, then repeatedly
@@ -178,7 +178,7 @@ class Tokenizer(BaseModel):
                 self._byte_encoder[b] for b in pretoken.encode("utf-8")
             )
 
-            for tok in self._bpe(encoded):
+            for tok in self.bpe(encoded):
                 ids.append(self._vocab[tok])
 
         return ids

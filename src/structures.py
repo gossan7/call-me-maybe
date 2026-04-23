@@ -106,13 +106,13 @@ class TokenGrammar(BaseModel):
     end_set: List[str]
     llm: Small_LLM_Model
     tokenizer: Tokenizer
-    state: str = "start"
+    state: str = ""
     token_sets: Dict[str, Set[int]] = {}
     end_set_tokens: Set[int] = set()
 
     def model_post_init(self, _: Any) -> None:
         """Tokenise every grammar token set and the end-sequence alphabet."""
-        self.state: str = "start"
+        self.state: str = self.grammar["start"]
 
         self.token_sets = {
             curr_set: {

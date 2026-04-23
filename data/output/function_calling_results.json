@@ -3,16 +3,16 @@
     "prompt": "What is the sum of 2 and 3?",
     "name": "fn_add_numbers",
     "parameters": {
-      "a": 2,
-      "b": 3
+      "a": 2.0,
+      "b": 3.0
     }
   },
   {
     "prompt": "What is the sum of 265 and 345?",
     "name": "fn_add_numbers",
     "parameters": {
-      "a": 265,
-      "b": 345
+      "a": 265.0,
+      "b": 345.0
     }
   },
   {
@@ -45,26 +45,25 @@
   },
   {
     "prompt": "What is the square root of 16?",
-    "name": "fn_power",
+    "name": "fn_get_square_root",
     "parameters": {
-      "base": 16.0,
-      "exponent": 1.0
+      "a": 16.0
     }
   },
   {
     "prompt": "Calculate the square root of 144",
-    "name": "fn_power",
+    "name": "fn_get_square_root",
     "parameters": {
-      "base": 144.0,
-      "exponent": 2.0
+      "a": 144.0
     }
   },
   {
     "prompt": "Replace all numbers in \"Hello 34 I'm 233 years old\" with NUMBERS",
-    "name": "fn_multiply_numbers",
+    "name": "fn_substitute_string_with_regex",
     "parameters": {
-      "a": 34.0,
-      "b": 233.0
+      "source_string": "Hello 34 I'm 233 years old",
+      "regex": "34",
+      "replacement": "34"
     }
   },
   {
