@@ -26,7 +26,7 @@ class DataError(Exception):
         super().__init__(f"DataError: {msg}")
 
 
-def _check_token_sets(
+def check_token_sets(
     type_name: str,
     token_sets: Any,
 ) -> Optional[str]:
@@ -52,7 +52,7 @@ def _check_token_sets(
     return None
 
 
-def _check_state(
+def check_state(
     type_name: str,
     state_name: str,
     state_def: Any,
@@ -95,7 +95,7 @@ def _check_state(
     return None
 
 
-def _check_type(type_name: str, type_def: Any) -> Optional[str]:
+def check_type(type_name: str, type_def: Any) -> Optional[str]:
     """Validate the shape of a single grammar type definition."""
     if not isinstance(type_name, str):
         return "Grammar type name must be a string."
@@ -106,7 +106,7 @@ def _check_type(type_name: str, type_def: Any) -> Optional[str]:
         if key not in type_def:
             return f"Grammar type '{type_name}' missing '{key}'."
 
-    error = _check_token_sets(type_name, type_def["token_sets"])
+    error = check_token_sets(type_name, type_def["token_sets"])
     if error:
         return error
 
@@ -118,7 +118,7 @@ def _check_type(type_name: str, type_def: Any) -> Optional[str]:
         return f"Grammar type '{type_name}': 'states' must be an object."
 
     for state_name, state_def in states.items():
-        error = _check_state(type_name, state_name, state_def)
+        error = check_state(type_name, state_name, state_def)
         if error:
             return error
 
@@ -138,14 +138,14 @@ def check_grammar(grammar: Any) -> Optional[str]:
         return "Grammar must be a JSON object."
 
     for type_name, type_def in grammar.items():
-        error = _check_type(type_name, type_def)
+        error = check_type(type_name, type_def)
         if error:
             return error
 
     return None
 
 
-def _check_function(func: Any, index: int) -> Optional[str]:
+def check_function(func: Any, index: int) -> Optional[str]:
     """Validate the shape of a single function definition."""
     if not isinstance(func, dict):
         return f"Function at index {index} must be an object."
@@ -201,7 +201,7 @@ def check_functions(functions: Any) -> Optional[str]:
         return "Functions definition must be a JSON array."
 
     for i, func in enumerate(functions):
-        error = _check_function(func, i)
+        error = check_function(func, i)
         if error:
             return error
 
