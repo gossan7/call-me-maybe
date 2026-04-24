@@ -59,29 +59,23 @@
   },
   {
     "prompt": "Replace all numbers in \"Hello 34 I'm 233 years old\" with NUMBERS",
-    "name": "fn_substitute_string_with_regex",
+    "name": "fn_get_square_root",
     "parameters": {
-      "source_string": "Hello 34 I'm 233 years old",
-      "regex": "34",
-      "replacement": "34"
+      "a": 34.0
     }
   },
   {
     "prompt": "Replace all vowels in 'Programming is fun' with asterisks",
-    "name": "fn_substitute_string_with_regex",
+    "name": "fn_get_square_root",
     "parameters": {
-      "source_string": "Programming is fun",
-      "regex": "a|e|i",
-      "replacement": " * "
+      "a": 5.0
     }
   },
   {
     "prompt": "Substitute the word 'cat' with 'dog' in 'The cat sat on the mat with another cat'",
-    "name": "fn_substitute_string_with_regex",
+    "name": "fn_get_square_root",
     "parameters": {
-      "source_string": "The cat sat on the mat with another cat",
-      "regex": "cat",
-      "replacement": "dog"
+      "a": 100.0
     }
   }
 ]
