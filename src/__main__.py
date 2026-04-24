@@ -56,7 +56,7 @@ def parse_argv() -> argparse.Namespace:
     parser.add_argument(
         "--output",
         type=str,
-        default="data/output/function_calling_results.json",
+        default="data/output/function_calls.json",
         help="Path to output results JSON file."
     )
     parser.add_argument(
@@ -97,7 +97,7 @@ def _load_json(path: str, label: str) -> Any:
             or contains invalid JSON.
     """
     try:
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             return json.load(f)
     except FileNotFoundError:
         raise DataError(f"{label} file not found: {path}")
@@ -106,6 +106,11 @@ def _load_json(path: str, label: str) -> Any:
     except PermissionError:
         raise DataError(
             f"Cannot read {label} file (permission denied): {path}")
+    except UnicodeDecodeError as e:
+        raise DataError(
+            f"{label} file {path} is not valid UTF-8 text "
+            f"(byte {e.start}: {e.reason})."
+        )
     except json.JSONDecodeError as e:
         raise DataError(
             f"Invalid JSON in {label} file {path}: "
