@@ -13,6 +13,7 @@ dependencies = [
     "flake8>=7.3.0",
     "regex>=2026.4.4",
     "types-regex>=2026.4.4.20260408",
+    "accelerate>=1.14.0",
 ]
 
 [build-system]
